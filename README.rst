@@ -25,6 +25,7 @@ Compatibility
 Dependencies to run
 -------------------
 
+ * `nbgwas <https://github.com/shfong/nbgwas/>`_
  * `requests <https://pypi.org/project/requests/>`_
  * `networkx <https://pypi.org/project/networkx/>`_
  * `numpy <https://pypi.org/project/numpy/>`_
@@ -75,7 +76,7 @@ Example usage of service
 Running server under VM via Vagrant
 -----------------------------------
 
-These instructions will automatically install and configure nbgwas_rest and nbgwas on a virtual machine and are the easiest way to get the system running. `Vagrant <https://https://www.vagrantup.com/>`_ and `Virtualbox <https://https://www.virtualbox.org/>`_ must installed prior to running the following commands:
+These instructions will automatically install and configure nbgwas_rest and `nbgwas <https://github.com/shfong/nbgwas>`_ on a virtual machine and are the easiest way to get the system running. `Vagrant <https://https://www.vagrantup.com/>`_ and `Virtualbox <https://https://www.virtualbox.org/>`_ must installed prior to running the following commands:
 
 .. code:: bash
 
