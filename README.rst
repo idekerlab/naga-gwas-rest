@@ -68,9 +68,33 @@ Running server in development mode
 Example usage of service
 ------------------------
 
+Below is a small quick and dirty script that leverages the nbgwas_rest service to run nbgwas on a tab delimited file passed into the script on the command line
+
 .. code:: bash
 
-   TODO...
+   #!/usr/bin/env python
+
+   import sys
+   import requests
+
+   # pass 3 column tab delimited file to this script
+   networkfile = sys.argv[1]
+
+   data_dict = {}
+
+   data_dict['seeds']='geneone,genetwo'
+   data_dict['alpha']=0.2
+   files = {'network': open(networkfile, 'rb')}
+   url = 'http://localhost:5000/nbgwas'
+   r = requests.post(url, data=data_dict, files=files)
+   sys.stdout.write(str(r.text) + '\n')
+   sys.stdout.write(str(r.status_code) + '\n')
+
+Assuming the above is saved in a file named foo.py
+
+.. code:: bash
+
+  ./foo.py mytsv.tsv
 
 
 Running server under VM via Vagrant
@@ -106,7 +130,7 @@ Please report them `here <https://github.com/coleslaw481/nbgwas_rest/issues>`_
 Acknowledgements
 ----------------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+* Initial template created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
