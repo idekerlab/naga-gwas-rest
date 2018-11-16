@@ -199,20 +199,14 @@ class TaskGetterApp(Resource):
 class RestApp(Resource):
     """Old interface that returns the result immediately"""
 
-    @api.doc('hello', params={ALPHA_PARAM: 'Alpha parameter to use in random walk '
-                                           'with restart model function should be set to values between 0-1',
-                              NDEX_PARAM: 'If set, grabs network matching ID from NDEX http://http://www.ndexbio.org/',
-                              NETWORK_PARAM: 'If set, loads network from file (TODO explain format)',
-                              SEEDS_PARAM: 'Comma list of genes...',
-                              COLUMN_PARAM: 'Setting this gets network from bigim?'
-                              },
+    @api.doc('hello',
              description='Legacy REST service that runs NBGWAS and waits for result',
-             example='Add example here',
              responses={
                  200: 'Success',
                  500: 'Internal server error'
              })
     @api.deprecated
+    @api.expect(task_fields)
     def post(self):
         """Runs Network Boosted GWAS"""
         app.logger.debug("Begin!")
