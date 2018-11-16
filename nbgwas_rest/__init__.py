@@ -79,7 +79,7 @@ def create_task(request_obj):
         json.dump(params, f)
         f.flush()
 
-    shutil.move(tmp_task_json, os.path.join(taskpath, TASK_JSON))
+    shutil.move(taskfilename, os.path.join(taskpath, TASK_JSON))
     return params['uuid']
 
 
