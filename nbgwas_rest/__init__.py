@@ -138,26 +138,27 @@ class TaskBasedRestApp(Resource):
             app.logger.exception('Error creating task')
             abort(500, 'Unable to create task')
 
-    def delete(self):
-        resp = flask.make_response()
-        resp.status_code = 200
-        return resp
-
 
 @api.route('/nbgwas/tasks/<string:id>', endpoint='nbgwas/tasks')
 class TaskGetterApp(Resource):
 
-    def head(self):
+    def head(self, id):
         resp = flask.make_response()
         resp.status_code = 200
         return resp
 
-    def get(self):
+    def get(self, id):
         resp = flask.make_response()
         resp.status_code = 200
         return resp
 
-    def delete(self):
+    def delete(self, id):
+        """
+        Deletes task associated with id passed in
+        :param id: task id to delete. If set to 'all' then all tasks coming
+                   from ip address will be deleted
+        :return: Status code 200 upon success otherwise 500 and a message
+        """
         resp = flask.make_response()
         resp.status_code = 200
         return resp
