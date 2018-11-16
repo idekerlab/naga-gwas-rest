@@ -100,6 +100,17 @@ def get_task(uuidstr, hintlist=None, basedir=JOB_PATH):
     return None
 
 
+def wait_for_task(uuidstr, hintlist=None):
+    counter = 0
+    while counter < WAIT_COUNT:
+        taskpath = get_task(uuidstr, hintlist=hintlist)
+        if taskpath is not None:
+            break
+        app.logger.debug('Sleeping while waiting for ' + uuidstr)
+        time.sleep(SLEEP_TIME)
+    return taskpath
+
+
 # NETWORK_PARAM: fields.Arbitrary(description='If set, loads network from file (TODO explain format)')
 task_fields = api.model('tasks', {
     ALPHA_PARAM: fields.Float(0.2, min=0.0, max=1.0,
@@ -148,8 +159,27 @@ class TaskGetterApp(Resource):
         return resp
 
     def get(self, id):
+        """
+        Gets result of task if completed
+        :param id:
+        :return:
+        """
+        hintlist = [request.remote_addr]
+        taskpath = get_task(id, hintlist=hintlist)
+
+        result = os.path.join(taskpath, RESULT)
+        if not os.path.isfile(result):
+            resp = flask.make_response()
+            resp.status_code = 200
+            resp.data = {"status": "Running"}
+            return resp
+
+        with open(result, 'r') as f:
+            data = json.load(result)
+
         resp = flask.make_response()
         resp.status_code = 200
+        resp.data = data
         return resp
 
     def delete(self, id):
@@ -190,14 +220,8 @@ class RestApp(Resource):
         try:
             res = create_task(request)
             counter = 0
-
-            while counter < WAIT_COUNT:
-                taskpath = get_task(res)
-                if taskpath is not None:
-                    break
-                app.logger.debug('Sleeping while waiting for ' + res)
-                time.sleep(SLEEP_TIME)
-
+            hintlist = [request.remote_addr]
+            taskpath = wait_for_task(res, hintlist=hintlist)
             result = os.path.join(taskpath, RESULT)
             with open(result, 'r') as f:
                 data = json.load(result)
