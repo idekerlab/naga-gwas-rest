@@ -8,7 +8,7 @@ __version__ = '0.1.0'
 
 from nbgwas import Nbgwas
 from flask import Flask, request, jsonify
-from flask_restful import reqparse, abort, Api, Resource
+from flask_restplus import reqparse, abort, Api, Resource
 import pandas as pd
 import networkx as nx
 import logging
@@ -16,19 +16,16 @@ import json
 from ndex2 import create_nice_cx_from_server
 
 from nbgwas_rest import bigim
+desc = """A REST service for an accessible, fast and customizable network propagation system 
+for pathway interpretation of Genome Wide Association Studies (GWAS)
+"""
+# global api object
+app = Flask(__name__, instance_relative_config=True)
+api = Api(app, version=str(__version__),
+          title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
+          description=desc)
+app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 
-
-def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
-    api = Api(app)
-    if test_config is None:
-        # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        # load the test config if passed in
-        app.config.from_mapping(test_config)
-    api.add_resource(nbgwasapp, '/nbgwas', endpoint='nbgwas')
-    return app
 
 def create_gene_level_summary(genes, seeds):
     # Add heat to gene_level_summary
@@ -40,35 +37,51 @@ def create_gene_level_summary(genes, seeds):
     return genes_level_summary
 
 
+ALPHA_PARAM='alpha'
+NETWORK_PARAM='network'
+COLUMN_PARAM='column'
+SEEDS_PARAM='seeds'
+NDEX_PARAM='ndex'
+
+@api.route('/nbgwas', endpoint='nbgwas')
 class nbgwasapp(Resource):
 
+
+    @api.doc('Runs Network Boosted GWAS',
+             params={ALPHA_PARAM: 'Alpha parameter to use in random walk '
+                                            'with restart model function should be set to values between 0-1',
+                     NDEX_PARAM: 'If set, grabs network matching ID from NDEX http://http://www.ndexbio.org/',
+                     NETWORK_PARAM: 'If set, loads network from file (TODO explain format)',
+                     SEEDS_PARAM: 'Comma list of genes...',
+                     COLUMN_PARAM: 'Setting this gets network from bigim?'
+
+    },
+        responses={
+        200: 'Success'
+    })
     def post(self):
-
         logging.info("Begin!")
-
         # Setting alpha
-        alpha = float(request.values.get("alpha", 0.5))
-
+        alpha = float(request.values.get(ALPHA_PARAM, 0.5))
         dG = None
-
         # Getting network
-        if "network" in request.files:
+        if NETWORK_PARAM in request.files:
             logging.info("Reading Network File")
 
-            network_file = request.files['network']
+            network_file = request.files[NETWORK_PARAM]
             network_df = pd.read_csv(
                 network_file.stream,
                 sep='\t',
                 names=['Gene1', 'Gene2', 'Val']
             )
-        elif "column" in request.values:
+        elif COLUMN_PARAM in request.values:
             logging.info("Getting file from BigGIM")
-            network_df = bigim.get_table_from_biggim(request.values['column'], 0.8)
+            network_df = bigim.get_table_from_biggim(request.values[COLUMN_PARAM], 0.8)
             network_df = network_df.astype(str)
 
-        elif "ndex" in request.values:
+        elif NDEX_PARAM in request.values:
             logging.info("Getting network from NDEx")
-            ndex_uuid = request.values['ndex']
+            ndex_uuid = request.values[NDEX_PARAM]
             network_niceCx = create_nice_cx_from_server(
                 server='public.ndexbio.org',
                 uuid=ndex_uuid
@@ -90,7 +103,7 @@ class nbgwasapp(Resource):
         logging.info("Finished making network")
 
         # Parsing seeds
-        seeds = request.values['seeds']
+        seeds = request.values[SEEDS_PARAM]
         seeds = seeds.split(',')
 
         logging.info("Finished converting seeds")
