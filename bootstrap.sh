@@ -25,7 +25,7 @@ sudo -u vagrant echo "export PATH=/opt/miniconda3/bin:$PATH" >> /home/vagrant/.b
 
 conda install -y -c conda-forge python-igraph
 conda install -y -c anaconda flask
-conda install -y -c conda-forge flask-restful
+conda install -y -c conda-forge flask-restplus 
 
 git clone https://github.com/ndexbio/ndex2-client.git
 pushd ndex2-client
