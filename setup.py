@@ -14,8 +14,6 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'requests',
     'networkx==1.11', #ndex2 requires networks 1.11
-    'numpy',
-    'matplotlib',
     'pandas',
     'ndex2',
     'flask',
@@ -27,8 +25,6 @@ setup_requirements = [ ]
 test_requirements = [
     'requests',
     'networkx==1.11', #ndex2 requires networks 1.11
-    'numpy',
-    'matplotlib',
     'pandas',
     'ndex2',
     'flask',
