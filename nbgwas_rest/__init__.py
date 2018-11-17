@@ -154,6 +154,11 @@ class TaskBasedRestApp(Resource):
 class TaskGetterApp(Resource):
 
     def head(self, id):
+        """
+        Gets status of task
+        :param id: task id
+        :return: Content-Length in header will be non-zero if task has completed
+        """
         resp = flask.make_response()
         resp.status_code = 200
         return resp
