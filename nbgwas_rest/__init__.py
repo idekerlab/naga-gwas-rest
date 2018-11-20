@@ -18,8 +18,39 @@ from flask_restplus import reqparse, abort, Api, Resource, fields
 desc = """A REST service for an accessible, fast and customizable network propagation system 
 for pathway interpretation of Genome Wide Association Studies (GWAS)
 """
+
+NBGWAS_REST_SETTINGS_ENV='NBGWAS_REST_SETTINGS'
 # global api object
-app = Flask(__name__, instance_relative_config=True)
+app = Flask(__name__)
+
+JOB_PATH_KEY = 'JOB_PATH'
+WAIT_COUNT_KEY = 'WAIT_COUNT'
+SLEEP_TIME_KEY = 'SLEEP_TIME'
+
+app.config[JOB_PATH_KEY] = '/tmp'
+app.config[WAIT_COUNT_KEY] = 60
+app.config[SLEEP_TIME_KEY] = 10
+
+app.config.from_envvar(NBGWAS_REST_SETTINGS_ENV, silent=True)
+
+
+SUBMIT_DIR = 'submitted'
+PROCESSING_DIR = 'processing'
+DONE_DIR = 'done'
+TASK_JSON = 'task.json'
+NETWORK_DATA = 'network.data'
+LOCATION = 'Location'
+RESULT = 'result.json'
+
+STATUS_RESULT_KEY = 'status'
+NOTFOUND_STATUS = 'notfound'
+UNKNOWN_STATUS = 'unknown'
+SUBMITTED_STATUS = 'submitted'
+PROCESSING_STATUS = 'processing'
+DONE_STATUS = 'done'
+RESULT_KEY = 'result'
+
+
 api = Api(app, version=str(__version__),
           title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
           description=desc, example='put example here')
@@ -31,16 +62,42 @@ COLUMN_PARAM = 'column'
 SEEDS_PARAM = 'seeds'
 NDEX_PARAM = 'ndex'
 
-JOB_PATH = '/tmp/nbgwas'
-TASK_JSON = 'task.json'
-NETWORK_DATA = 'network.data'
-LOCATION = 'Location'
-RESULT = 'result.json'
-WAIT_COUNT = 60
-SLEEP_TIME = 10
+
+def get_submit_dir():
+    """
+    Gets base directory where submitted jobs will be placed
+    :return:
+    """
+    return os.path.join(app.config[JOB_PATH_KEY], SUBMIT_DIR)
+
+
+def get_processing_dir():
+    """
+        Gets base directory where processing jobs will be placed
+    :return:
+    """
+    return os.path.join(app.config[JOB_PATH_KEY], PROCESSING_DIR)
+
+
+def get_done_dir():
+    """
+        Gets base directory where completed jobs will be placed
+
+    :return:
+    """
+    return os.path.join(app.config[JOB_PATH_KEY], DONE_DIR)
 
 
 def create_task(request_obj):
+    """
+    Creates a task by consuming data from request_obj passed in
+    and persisting that information to the filesystem under
+    JOB_PATH/SUBMIT_DIR/<IP ADDRESS>/UUID with various parameters
+    stored in TASK_JSON file and if the 'network' file is set
+    that data is dumped to NETWORK_DATA file within the directory
+    :param request_obj:
+    :return: string that is a uuid which denotes directory name
+    """
     params = {}
     params[ALPHA_PARAM] = float(request_obj.values.get(ALPHA_PARAM, 0.5))
 
@@ -49,7 +106,8 @@ def create_task(request_obj):
 
     params['uuid'] = str(uuid.uuid4())
 
-    taskpath = os.path.join(JOB_PATH, request_obj.remote_addr, params['uuid'])
+    taskpath = os.path.join(get_submit_dir(), request_obj.remote_addr,
+                            params['uuid'])
     os.makedirs(taskpath, mode=0o755)
 
     # Getting network
@@ -63,12 +121,13 @@ def create_task(request_obj):
             f.flush()
     elif COLUMN_PARAM in request_obj.values:
         app.logger.debug("Getting file from BigGIM")
-        params[COLUMN_PARAM] = request_obj.values[COLUMN_PARAM]  # what is 0.8?
-
+        # what is 0.8?
+        params[COLUMN_PARAM] = request_obj.values[COLUMN_PARAM]
     elif NDEX_PARAM in request_obj.values:
         app.logger.debug("Getting network from NDEx")
         params[NDEX_PARAM] = request_obj.values[NDEX_PARAM]
     else:
+        app.logger.error('Missing one of the required parameters')
         raise Exception('One of the three parameters must be '
                         'passed with request: ' + NETWORK_PARAM +
                         ', ' + COLUMN_PARAM + ', ' + NDEX_PARAM)
@@ -83,41 +142,86 @@ def create_task(request_obj):
     return params['uuid']
 
 
-def get_task(uuidstr, hintlist=None, basedir=JOB_PATH):
+def get_task(uuidstr, iphintlist=None, basedir=None):
+    """
+    Gets task under under basedir.
+    :param uuidstr: uuid string for task
+    :param iphintlist: list of ip addresses as strings to speed up search.
+                       if set then each
+                       '/<basedir>//<iphintlist entry>/<uuidstr>'
+                       is first checked and if the path is a directory
+                       it is returned
+    :param basedir:  base directory as string ie /foo
+    :return: full path to task or None if not found
+    """
+    if uuidstr is None:
+        app.logger.warning('Path passed in is None')
+        return None
 
-    if hintlist is not None:
-        for subdir in hintlist:
-            taskpath = os.path.join(basedir, subdir, uuidstr)
-            if os.path.isdir(taskpath):
-                return taskpath
+    if basedir is None:
+        app.logger.error('basedir is None')
+        return None
+
+    if not os.path.isdir(basedir):
+        app.logger.error(basedir + ' is not a directory')
+        return None
+
+    # Todo: Add logic to leverage iphintlist
 
     for entry in os.listdir(basedir):
-        fullpath = os.path.join(basedir, entry)
-        if not os.path.isdir(fullpath):
-            taskpath = os.path.join(fullpath, uuidstr)
+        ip_path = os.path.join(basedir, entry)
+        if not os.path.isdir(ip_path):
+            continue
+        for subentry in os.listdir(ip_path):
+            if uuidstr != subentry:
+                continue
+            taskpath = os.path.join(ip_path, subentry)
+
             if os.path.isdir(taskpath):
                 return taskpath
     return None
 
 
 def wait_for_task(uuidstr, hintlist=None):
+    """
+    Waits for task to appear in done directory
+    :param uuidstr: uuid of task
+    :param hintlist: list of ip addresses to search under
+    :return: string containing full path to task or None if not found
+    """
+    if uuidstr is None:
+        app.logger.error('uuid is None')
+        return None
+
     counter = 0
-    while counter < WAIT_COUNT:
-        taskpath = get_task(uuidstr, hintlist=hintlist)
+    taskpath = None
+    done_dir = get_done_dir()
+    while counter < app.config[WAIT_COUNT_KEY]:
+        taskpath = get_task(uuidstr, iphintlist=hintlist,
+                            basedir=done_dir)
         if taskpath is not None:
             break
         app.logger.debug('Sleeping while waiting for ' + uuidstr)
-        time.sleep(SLEEP_TIME)
+        time.sleep(app.config[SLEEP_TIME_KEY])
+        counter = counter + 1
+
+    if taskpath is None:
+        app.logger.info('Wait time exceeded while looking for: ' + uuidstr)
+
     return taskpath
 
 
-# NETWORK_PARAM: fields.Arbitrary(description='If set, loads network from file (TODO explain format)')
 task_fields = api.model('tasks', {
     ALPHA_PARAM: fields.Float(0.2, min=0.0, max=1.0,
-                              description='Alpha parameter to use in random walk function'),
-    NDEX_PARAM: fields.String(None, description='If set, grabs network matching ID from NDEX http://http://www.ndexbio.org/'),
+                              description='Alpha parameter to use in random '
+                                          'walk function'),
+    NDEX_PARAM: fields.String(None, description='If set, grabs network'
+                                                ' matching ID from NDEX '
+                                                'http://http://www.ndexbio.'
+                                                'org/'),
     SEEDS_PARAM: fields.String(None, description='Comma list of genes...'),
-    COLUMN_PARAM: fields.String(None, description='Setting this gets network from bigim?'),
+    COLUMN_PARAM: fields.String(None, description='Setting this gets '
+                                                  'network from bigim?'),
 })
 
 @api.doc('Runs NEtwork boosted gwas')
@@ -147,22 +251,21 @@ class TaskBasedRestApp(Resource):
             return resp
         except OSError as e:
             app.logger.exception('Error creating task')
-            abort(500, 'Unable to create task')
+            abort(500, 'Unable to create task ' + str(e))
+        except Exception as ea:
+            app.logger.exception('Error creating task')
+            abort(500, 'Unable to create task ' + str(ea))
 
 
 @api.route('/nbgwas/tasks/<string:id>', endpoint='nbgwas/tasks')
 class TaskGetterApp(Resource):
 
-    def head(self, id):
-        """
-        Gets status of task
-        :param id: task id
-        :return: Content-Length in header will be non-zero if task has completed
-        """
-        resp = flask.make_response()
-        resp.status_code = 200
-        return resp
-
+    @api.doc('Gets status and response of submitted NBGWAS task',
+             responses={
+                 200: 'Success',
+                 410: 'Task not found',
+                 500: 'Internal server error'
+             })
     def get(self, id):
         """
         Gets result of task if completed
@@ -170,21 +273,40 @@ class TaskGetterApp(Resource):
         :return:
         """
         hintlist = [request.remote_addr]
-        taskpath = get_task(id, hintlist=hintlist)
+        taskpath = get_task(id, iphintlist=hintlist,
+                            basedir=get_submit_dir())
+
+        resp = flask.make_response()
+        resp.status_code = 200
+        resp.data = {STATUS_RESULT_KEY: UNKNOWN_STATUS}
+
+        result = os.path.join(taskpath, RESULT)
+
+        if os.path.isfile(result):
+            resp.data = {STATUS_RESULT_KEY: SUBMITTED_STATUS}
+            return resp
+
+        taskpath = get_task(id, iphintlist=hintlist,
+                            basedir=get_processing_dir())
+
+        result = os.path.join(taskpath, RESULT)
+        if os.path.isfile(result):
+            resp.data = {STATUS_RESULT_KEY: PROCESSING_STATUS}
+            return resp
+
+        taskpath = get_task(id, iphintlist=hintlist,
+                            basedir=get_processing_dir())
 
         result = os.path.join(taskpath, RESULT)
         if not os.path.isfile(result):
-            resp = flask.make_response()
-            resp.status_code = 200
-            resp.data = {"status": "Running"}
+            resp.data = {STATUS_RESULT_KEY: NOTFOUND_STATUS}
+            resp.status_code = 410
             return resp
 
         with open(result, 'r') as f:
             data = json.load(result)
-
-        resp = flask.make_response()
-        resp.status_code = 200
-        resp.data = data
+        resp.data = {STATUS_RESULT_KEY: DONE_STATUS,
+                     RESULT_KEY: data}
         return resp
 
     def delete(self, id):
@@ -192,10 +314,11 @@ class TaskGetterApp(Resource):
         Deletes task associated with id passed in
         :param id: task id to delete. If set to 'all' then all tasks coming
                    from ip address will be deleted
-        :return: Status code 200 upon success otherwise 500 and a message
+        :return: Currently not implemented and will always return code 503
         """
         resp = flask.make_response()
-        resp.status_code = 200
+        resp.data = 'Currently not implemented'
+        resp.status_code = 503
         return resp
 
 
@@ -218,9 +341,11 @@ class RestApp(Resource):
 
         try:
             res = create_task(request)
-            counter = 0
             hintlist = [request.remote_addr]
             taskpath = wait_for_task(res, hintlist=hintlist)
+            if taskpath is None:
+                abort(500, 'Unable to run task')
+
             result = os.path.join(taskpath, RESULT)
             with open(result, 'r') as f:
                 data = json.load(result)
