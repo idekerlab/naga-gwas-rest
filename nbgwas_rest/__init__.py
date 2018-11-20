@@ -65,6 +65,7 @@ SEEDS_PARAM = 'seeds'
 NDEX_PARAM = 'ndex'
 REMOTEIP_PARAM = 'remoteip'
 UUID_PARAM = 'uuid'
+ERROR_PARAM = 'error'
 
 uuid_counter = 1
 
