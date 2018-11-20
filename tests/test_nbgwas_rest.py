@@ -43,15 +43,15 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertTrue('Network Boosted' in str(rv.data))
 
     def test_get_submit_dir(self):
-        spath = os.path.join(self._temp_dir, nbgwas_rest.SUBMIT_DIR)
+        spath = os.path.join(self._temp_dir, nbgwas_rest.SUBMITTED_STATUS)
         self.assertEqual(nbgwas_rest.get_submit_dir(), spath)
 
     def test_get_processing_dir(self):
-        spath = os.path.join(self._temp_dir, nbgwas_rest.PROCESSING_DIR)
+        spath = os.path.join(self._temp_dir, nbgwas_rest.PROCESSING_STATUS)
         self.assertEqual(nbgwas_rest.get_processing_dir(), spath)
 
     def test_get_done_dir(self):
-        spath = os.path.join(self._temp_dir, nbgwas_rest.DONE_DIR)
+        spath = os.path.join(self._temp_dir, nbgwas_rest.DONE_STATUS)
         self.assertEqual(nbgwas_rest.get_done_dir(), spath)
 
     def test_get_task_basedir_none(self):
@@ -209,7 +209,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_get_id_not_found(self):
         done_dir = os.path.join(self._temp_dir,
-                                nbgwas_rest.DONE_DIR)
+                                nbgwas_rest.DONE_STATUS)
         os.makedirs(done_dir, mode=0o755)
         rv = self._app.get('nbgwas/tasks/1234')
         data = json.loads(rv.data)
@@ -219,7 +219,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_get_id_found_in_submitted_status(self):
         task_dir = os.path.join(self._temp_dir,
-                                nbgwas_rest.SUBMIT_DIR,
+                                nbgwas_rest.SUBMITTED_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
         rv = self._app.get('nbgwas/tasks/qazxsw')
@@ -230,7 +230,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_get_id_found_in_processing_status(self):
         task_dir = os.path.join(self._temp_dir,
-                                nbgwas_rest.PROCESSING_DIR,
+                                nbgwas_rest.PROCESSING_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
         rv = self._app.get('nbgwas/tasks/qazxsw')
@@ -241,7 +241,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_get_id_found_in_done_status_no_result_file(self):
         task_dir = os.path.join(self._temp_dir,
-                                nbgwas_rest.DONE_DIR,
+                                nbgwas_rest.DONE_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
         rv = self._app.get('nbgwas/tasks/qazxsw')
@@ -252,7 +252,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_get_id_found_in_done_status_with_result_file_no_task_file(self):
         task_dir = os.path.join(self._temp_dir,
-                                nbgwas_rest.DONE_DIR,
+                                nbgwas_rest.DONE_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
         resfile = os.path.join(task_dir, nbgwas_rest.RESULT)
@@ -269,7 +269,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_get_id_found_in_done_status_with_result_file_with_task_file(self):
         task_dir = os.path.join(self._temp_dir,
-                                nbgwas_rest.DONE_DIR,
+                                nbgwas_rest.DONE_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
         resfile = os.path.join(task_dir, nbgwas_rest.RESULT)

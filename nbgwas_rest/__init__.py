@@ -38,9 +38,6 @@ app.config[SLEEP_TIME_KEY] = 10
 app.config.from_envvar(NBGWAS_REST_SETTINGS_ENV, silent=True)
 
 
-SUBMIT_DIR = 'submitted'
-PROCESSING_DIR = 'processing'
-DONE_DIR = 'done'
 TASK_JSON = 'task.json'
 NETWORK_DATA = 'network.data'
 LOCATION = 'Location'
@@ -66,8 +63,11 @@ NETWORK_PARAM = 'network'
 COLUMN_PARAM = 'column'
 SEEDS_PARAM = 'seeds'
 NDEX_PARAM = 'ndex'
+REMOTEIP_PARAM = 'remoteip'
+UUID_PARAM = 'uuid'
 
-uuid_counter=1
+uuid_counter = 1
+
 
 def get_uuid():
     """
@@ -91,7 +91,7 @@ def get_submit_dir():
     Gets base directory where submitted jobs will be placed
     :return:
     """
-    return os.path.join(app.config[JOB_PATH_KEY], SUBMIT_DIR)
+    return os.path.join(app.config[JOB_PATH_KEY], SUBMITTED_STATUS)
 
 
 def get_processing_dir():
@@ -99,7 +99,7 @@ def get_processing_dir():
         Gets base directory where processing jobs will be placed
     :return:
     """
-    return os.path.join(app.config[JOB_PATH_KEY], PROCESSING_DIR)
+    return os.path.join(app.config[JOB_PATH_KEY], PROCESSING_STATUS)
 
 
 def get_done_dir():
@@ -108,7 +108,7 @@ def get_done_dir():
 
     :return:
     """
-    return os.path.join(app.config[JOB_PATH_KEY], DONE_DIR)
+    return os.path.join(app.config[JOB_PATH_KEY], DONE_STATUS)
 
 
 def create_task(request_obj):
