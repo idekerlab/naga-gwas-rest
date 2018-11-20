@@ -9,7 +9,6 @@ import time
 import shutil
 import json
 
-import nbgwas
 from nbgwas import Nbgwas
 
 import nbgwas_rest
@@ -65,6 +64,12 @@ def _setuplogging(theargs):
 class FileBasedTask(object):
     """Represents a task
     """
+
+    BASEDIR = 'basedir'
+    STATE = 'state'
+    IPADDR = 'ipaddr'
+    UUID = 'uuid'
+
     def __init__(self, taskdir, taskdict):
         self._taskdir = taskdir
         self._taskdict = taskdict
@@ -81,6 +86,12 @@ class FileBasedTask(object):
         """
         if self._taskdir is None:
             return 'Task dir is None'
+
+        if self._taskdict is None:
+            return 'Task dict is None'
+
+        if not os.path.isdir(self._taskdir):
+            return str(self._taskdir) + ' is not a directory'
 
         tjsonfile = os.path.join(self._taskdir, nbgwas_rest.TASK_JSON)
         logger.debug('Writing task data to: ' + tjsonfile)
@@ -103,10 +114,10 @@ class FileBasedTask(object):
         :return: None
         """
         taskattrib = self._get_uuid_ip_state_basedir_from_path()
-        if taskattrib is None or taskattrib['basedir'] is None:
+        if taskattrib is None or taskattrib[FileBasedTask.BASEDIR] is None:
             return 'Unable to extract state basedir from task path'
 
-        if taskattrib['state'] == new_state:
+        if taskattrib[FileBasedTask.STATE] == new_state:
             logger.debug('Attempt to move task to same state: ' +
                          self._taskdir)
             return None
@@ -125,10 +136,11 @@ class FileBasedTask(object):
                         emsg)
             self._taskdict[nbgwas_rest.ERROR_PARAM] = emsg
             self.save_task()
-        logger.debug('Changing task: ' + str(taskattrib['uuid']) + ' to state ' +
-                     new_state)
-        ptaskdir = os.path.join(taskattrib['basedir'], new_state,
-                                taskattrib['ipaddr'], taskattrib['uuid'])
+        logger.debug('Changing task: ' + str(taskattrib[FileBasedTask.UUID]) +
+                     ' to state ' + new_state)
+        ptaskdir = os.path.join(taskattrib[FileBasedTask.BASEDIR], new_state,
+                                taskattrib[FileBasedTask.IPADDR],
+                                taskattrib[FileBasedTask.UUID])
         shutil.move(self._taskdir, ptaskdir)
         self._taskdir = ptaskdir
         return None
@@ -144,41 +156,46 @@ class FileBasedTask(object):
         """
         if self._taskdir is None:
             logger.error('Task dir not set')
-            return {'basedir': None,
-                    'state': None,
-                    'ipaddr': None,
-                    'uuid': None}
+            return {FileBasedTask.BASEDIR: None,
+                    FileBasedTask.STATE: None,
+                    FileBasedTask.IPADDR: None,
+                    FileBasedTask.UUID: None}
         taskuuid = os.path.basename(self._taskdir)
         ipdir = os.path.dirname(self._taskdir)
         ipaddr = os.path.basename(ipdir)
+        if ipaddr == '':
+            ipaddr = None
         statedir = os.path.dirname(ipdir)
         state = os.path.basename(statedir)
+        if state == '':
+            state = None
         basedir = os.path.dirname(statedir)
-        return {'basedir': basedir,
-                'state': state,
-                'ipaddr': ipaddr,
-                'uuid': taskuuid}
+        return {FileBasedTask.BASEDIR: basedir,
+                FileBasedTask.STATE: state,
+                FileBasedTask.IPADDR: ipaddr,
+                FileBasedTask.UUID: taskuuid}
 
     def get_ipaddress(self):
         """
         gets ip address
         :return:
         """
-        return self._get_uuid_ip_state_basedir_from_path()['ipaddr']
+        res = self._get_uuid_ip_state_basedir_from_path()[FileBasedTask.IPADDR]
+        return res
 
     def get_state(self):
         """
         Gets current state of task based on taskdir
         :return:
         """
-        return self._get_uuid_ip_state_basedir_from_path()['state']
+        return self._get_uuid_ip_state_basedir_from_path()[FileBasedTask.STATE]
 
     def get_task_uuid(self):
         """
         Parses taskdir path to get uuid
         :return: string containing uuid or None if not found
         """
-        return self._get_uuid_ip_state_basedir_from_path()['uuid']
+        return self._get_uuid_ip_state_basedir_from_path()[FileBasedTask.UUID]
 
     def get_task_summary_as_str(self):
         """
@@ -253,25 +270,30 @@ class FileBasedTask(object):
     def get_taskdict(self):
         return self._taskdict
 
-    def get_ipaddress(self):
-        """
-        Gets ip address
-        :return:
-        """
-        return self._taskdict[nbgwas_rest.REMOTEIP_PARAM]
-
     def get_alpha(self):
+        if self._taskdict is None:
+            return None
+        if nbgwas_rest.ALPHA_PARAM not in self._taskdict:
+            return None
         return self._taskdict[nbgwas_rest.ALPHA_PARAM]
 
     def get_seeds(self):
+        if self._taskdict is None:
+            return None
+        if nbgwas_rest.SEEDS_PARAM not in self._taskdict:
+            return None
         return self._taskdict[nbgwas_rest.SEEDS_PARAM]
 
     def get_bigim(self):
+        if self._taskdict is None:
+            return None
         if nbgwas_rest.COLUMN_PARAM not in self._taskdict:
             return None
         return self._taskdict[nbgwas_rest.COLUMN_PARAM]
 
     def get_ndex(self):
+        if self._taskdict is None:
+            return None
         if nbgwas_rest.NDEX_PARAM not in self._taskdict:
             return None
         return self._taskdict[nbgwas_rest.NDEX_PARAM]
