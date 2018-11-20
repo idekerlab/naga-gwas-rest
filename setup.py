@@ -12,6 +12,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
+    'argparse',
     'requests',
     'networkx==1.11', #ndex2 requires networks 1.11
     'pandas',
@@ -23,6 +24,7 @@ requirements = [
 setup_requirements = [ ]
 
 test_requirements = [
+    'argparse',
     'requests',
     'networkx==1.11', #ndex2 requires networks 1.11
     'pandas',
@@ -54,6 +56,7 @@ setup(
     keywords='nbgwas_rest',
     name='nbgwas_rest',
     packages=find_packages(include=['nbgwas_rest']),
+    scripts=['nbgwas_rest/nbgwas_taskrunner.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
