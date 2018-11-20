@@ -19,6 +19,8 @@ desc = """A REST service for an accessible, fast and customizable network propag
 for pathway interpretation of Genome Wide Association Studies (GWAS)
 """
 
+JSON_MIMETYPE = 'application/json'
+
 NBGWAS_REST_SETTINGS_ENV='NBGWAS_REST_SETTINGS'
 # global api object
 app = Flask(__name__)
@@ -26,6 +28,8 @@ app = Flask(__name__)
 JOB_PATH_KEY = 'JOB_PATH'
 WAIT_COUNT_KEY = 'WAIT_COUNT'
 SLEEP_TIME_KEY = 'SLEEP_TIME'
+SEQUENTIAL_UUID_KEY='SEQUENTIAL_UUID'
+
 
 app.config[JOB_PATH_KEY] = '/tmp'
 app.config[WAIT_COUNT_KEY] = 60
@@ -48,6 +52,7 @@ UNKNOWN_STATUS = 'unknown'
 SUBMITTED_STATUS = 'submitted'
 PROCESSING_STATUS = 'processing'
 DONE_STATUS = 'done'
+ERROR_STATUS = 'error'
 RESULT_KEY = 'result'
 
 
@@ -61,6 +66,24 @@ NETWORK_PARAM = 'network'
 COLUMN_PARAM = 'column'
 SEEDS_PARAM = 'seeds'
 NDEX_PARAM = 'ndex'
+
+uuid_counter=1
+
+def get_uuid():
+    """
+    Generates UUID and returns as string. With one caveat,
+    if app.config[USE_SEQUENTIAL_UUID] is set and True
+    then uuid_counter is returned and incremented
+    :return: uuid as string
+    """
+    if SEQUENTIAL_UUID_KEY in app.config:
+        if app.config[SEQUENTIAL_UUID_KEY] is True:
+            global uuid_counter
+            sequuid = str(uuid_counter)
+
+            uuid_counter = uuid_counter + 1
+            return sequuid
+    return str(uuid.uuid4())
 
 
 def get_submit_dir():
@@ -104,9 +127,9 @@ def create_task(request_obj):
     if SEEDS_PARAM in request_obj.values:
         params[SEEDS_PARAM] = request_obj.values[SEEDS_PARAM]
 
-    params['uuid'] = str(uuid.uuid4())
-
-    taskpath = os.path.join(get_submit_dir(), request_obj.remote_addr,
+    params['uuid'] = get_uuid()
+    params['remoteip'] = request_obj.remote_addr
+    taskpath = os.path.join(get_submit_dir(), params['remoteip'],
                             params['uuid'])
     os.makedirs(taskpath, mode=0o755)
 
@@ -142,6 +165,26 @@ def create_task(request_obj):
     return params['uuid']
 
 
+def log_task_json_file(taskpath):
+    """
+    Writes information about task to logger
+    :param taskpath: path to task
+    :return: None
+    """
+    if taskpath is None:
+        return None
+
+    tmp_task_json = TASK_JSON
+    taskfilename = os.path.join(taskpath, tmp_task_json)
+
+    if not os.path.isfile(taskfilename):
+        return None
+
+    with open(taskfilename, 'r') as f:
+        data = json.load(f)
+        app.logger.info('Json file of task: ' + str(data))
+
+
 def get_task(uuidstr, iphintlist=None, basedir=None):
     """
     Gets task under under basedir.
@@ -167,7 +210,7 @@ def get_task(uuidstr, iphintlist=None, basedir=None):
         return None
 
     # Todo: Add logic to leverage iphintlist
-
+    # Todo: Add a retry if not found with small delay in case of dir is moving
     for entry in os.listdir(basedir):
         ip_path = os.path.join(basedir, entry)
         if not os.path.isdir(ip_path):
@@ -276,38 +319,42 @@ class TaskGetterApp(Resource):
         taskpath = get_task(id, iphintlist=hintlist,
                             basedir=get_submit_dir())
 
-        resp = flask.make_response()
-        resp.status_code = 200
-        resp.data = {STATUS_RESULT_KEY: UNKNOWN_STATUS}
-
-        result = os.path.join(taskpath, RESULT)
-
-        if os.path.isfile(result):
-            resp.data = {STATUS_RESULT_KEY: SUBMITTED_STATUS}
+        if taskpath is not None:
+            resp = jsonify({STATUS_RESULT_KEY: SUBMITTED_STATUS})
+            resp.status_code = 200
             return resp
 
         taskpath = get_task(id, iphintlist=hintlist,
                             basedir=get_processing_dir())
 
-        result = os.path.join(taskpath, RESULT)
-        if os.path.isfile(result):
-            resp.data = {STATUS_RESULT_KEY: PROCESSING_STATUS}
+        if taskpath is not None:
+            resp = jsonify({STATUS_RESULT_KEY: PROCESSING_STATUS})
+            resp.status_code = 200
             return resp
 
         taskpath = get_task(id, iphintlist=hintlist,
-                            basedir=get_processing_dir())
+                            basedir=get_done_dir())
 
-        result = os.path.join(taskpath, RESULT)
-        if not os.path.isfile(result):
-            resp.data = {STATUS_RESULT_KEY: NOTFOUND_STATUS}
+        if taskpath is None:
+            resp = jsonify({STATUS_RESULT_KEY: NOTFOUND_STATUS})
             resp.status_code = 410
             return resp
 
+        result = os.path.join(taskpath, RESULT)
+        if not os.path.isfile(result):
+            resp = jsonify({STATUS_RESULT_KEY: ERROR_STATUS})
+            resp.status_code = 500
+            return resp
+
+        log_task_json_file(taskpath)
+        app.logger.info('Result file is ' + str(os.path.getsize(result)) +
+                        ' bytes')
+
         with open(result, 'r') as f:
-            data = json.load(result)
-        resp.data = {STATUS_RESULT_KEY: DONE_STATUS,
-                     RESULT_KEY: data}
-        return resp
+            data = json.load(f)
+
+        return jsonify({STATUS_RESULT_KEY: DONE_STATUS,
+                       RESULT_KEY: data})
 
     def delete(self, id):
         """
@@ -331,6 +378,7 @@ class RestApp(Resource):
              description='Legacy REST service that runs NBGWAS and waits for result',
              responses={
                  200: 'Success',
+                 408: 'Internal server error or task took too long to run',
                  500: 'Internal server error'
              })
     @api.deprecated
@@ -344,16 +392,16 @@ class RestApp(Resource):
             hintlist = [request.remote_addr]
             taskpath = wait_for_task(res, hintlist=hintlist)
             if taskpath is None:
-                abort(500, 'Unable to run task')
+                abort(408, 'There was an internal problem or the task'
+                           'took too long to run')
 
             result = os.path.join(taskpath, RESULT)
+            if not os.path.isfile(result):
+                abort(500, 'No results found for task')
             with open(result, 'r') as f:
                 data = json.load(result)
 
-            resp = flask.make_response()
-            resp.status_code = 200
-            resp.data = data
-            return resp
+            return jsonify(data)
         except OSError as e:
             app.logger.exception('Error creating task')
             abort(500, 'Unable to create task')

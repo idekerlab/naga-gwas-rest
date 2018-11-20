@@ -13,6 +13,9 @@ import tempfile
 import re
 import io
 import uuid
+import threading
+import time
+
 
 import nbgwas_rest
 
@@ -96,7 +99,7 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_head(self):
         rv = self._app.head('nbgwas/tasks/1')
-        self.assertEqual(rv.status_code, 503)
+        self.assertEqual(rv.status_code, 410)
 
     def test_post_missing_required_parameter(self):
         pdict = {}
@@ -108,13 +111,11 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_post_bigim(self):
         pdict={}
-        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4,
+        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
         pdict[nbgwas_rest.COLUMN_PARAM] = 'someid'
         pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
-        rv = self._app.post('nbgwas/tasks', data=dict(
-            alpha=0.4,
-            seeds='s1,s2',
-            column='someid'), follow_redirects=True)
+        rv = self._app.post('nbgwas/tasks', data=pdict,
+                            follow_redirects=True)
 
         self.assertEqual(rv.status_code, 202)
         res = rv.headers['Location']
@@ -207,6 +208,109 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(rv.status_code, 405)
 
     def test_get_id_not_found(self):
+        done_dir = os.path.join(self._temp_dir,
+                                nbgwas_rest.DONE_DIR)
+        os.makedirs(done_dir, mode=0o755)
         rv = self._app.get('nbgwas/tasks/1234')
-        self.assertEqual(str(rv.data), 'hi')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.NOTFOUND_STATUS)
+        self.assertEqual(rv.status_code, 410)
+
+    def test_get_id_found_in_submitted_status(self):
+        task_dir = os.path.join(self._temp_dir,
+                                nbgwas_rest.SUBMIT_DIR,
+                                '45.67.54.33', 'qazxsw')
+        os.makedirs(task_dir, mode=0o755)
+        rv = self._app.get('nbgwas/tasks/qazxsw')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.SUBMITTED_STATUS)
+        self.assertEqual(rv.status_code, 200)
+
+    def test_get_id_found_in_processing_status(self):
+        task_dir = os.path.join(self._temp_dir,
+                                nbgwas_rest.PROCESSING_DIR,
+                                '45.67.54.33', 'qazxsw')
+        os.makedirs(task_dir, mode=0o755)
+        rv = self._app.get('nbgwas/tasks/qazxsw')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.PROCESSING_STATUS)
+        self.assertEqual(rv.status_code, 200)
+
+    def test_get_id_found_in_done_status_no_result_file(self):
+        task_dir = os.path.join(self._temp_dir,
+                                nbgwas_rest.DONE_DIR,
+                                '45.67.54.33', 'qazxsw')
+        os.makedirs(task_dir, mode=0o755)
+        rv = self._app.get('nbgwas/tasks/qazxsw')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.ERROR_STATUS)
         self.assertEqual(rv.status_code, 500)
+
+    def test_get_id_found_in_done_status_with_result_file_no_task_file(self):
+        task_dir = os.path.join(self._temp_dir,
+                                nbgwas_rest.DONE_DIR,
+                                '45.67.54.33', 'qazxsw')
+        os.makedirs(task_dir, mode=0o755)
+        resfile = os.path.join(task_dir, nbgwas_rest.RESULT)
+        with open(resfile, 'w') as f:
+            f.write('{ "hello": "there"}')
+            f.flush()
+
+        rv = self._app.get('nbgwas/tasks/qazxsw')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.DONE_STATUS)
+        self.assertEqual(data[nbgwas_rest.RESULT_KEY]['hello'], 'there')
+        self.assertEqual(rv.status_code, 200)
+
+    def test_get_id_found_in_done_status_with_result_file_with_task_file(self):
+        task_dir = os.path.join(self._temp_dir,
+                                nbgwas_rest.DONE_DIR,
+                                '45.67.54.33', 'qazxsw')
+        os.makedirs(task_dir, mode=0o755)
+        resfile = os.path.join(task_dir, nbgwas_rest.RESULT)
+        with open(resfile, 'w') as f:
+            f.write('{ "hello": "there"}')
+            f.flush()
+        tfile = os.path.join(task_dir, nbgwas_rest.TASK_JSON)
+        with open(tfile, 'w') as f:
+            f.write('{"task": "yo"}')
+            f.flush()
+
+        rv = self._app.get('nbgwas/tasks/qazxsw')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.DONE_STATUS)
+        self.assertEqual(data[nbgwas_rest.RESULT_KEY]['hello'], 'there')
+        self.assertEqual(rv.status_code, 200)
+
+    def test_log_task_json_file_with_none(self):
+        self.assertEqual(nbgwas_rest.log_task_json_file(None), None)
+
+    def test_legacy_post_no_params(self):
+        rv = self._app.post('/nbgwas', follow_redirects=True)
+        sys.stdout.flush()
+        self.assertEqual(rv.status_code, 500)
+
+    def test_legacy_post_with_bigim_timesout(self):
+        pdict = {}
+        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
+        pdict[nbgwas_rest.COLUMN_PARAM] = 'someid'
+        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
+        rv = self._app.post('/nbgwas', data=pdict,
+                            follow_redirects=True)
+        self.assertEqual(rv.status_code, 408)
+
+    def test_legacy_post_with_ndex_timesout(self):
+        nbgwas_rest.app.config[nbgwas_rest.SEQUENTIAL_UUID_KEY] = True
+        pdict = {}
+        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
+        pdict[nbgwas_rest.NDEX_PARAM] = 'ndex'
+        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
+        rv = self._app.post('/nbgwas', data=pdict,
+                            follow_redirects=True)
+        self.assertEqual(rv.status_code, 408)
