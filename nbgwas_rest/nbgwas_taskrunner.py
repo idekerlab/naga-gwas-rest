@@ -8,6 +8,8 @@ import logging
 import time
 import shutil
 import json
+import requests
+from requests import HTTPError
 
 from nbgwas import Nbgwas
 
@@ -15,7 +17,6 @@ import nbgwas_rest
 import pandas as pd
 import networkx as nx
 from ndex2 import create_nice_cx_from_server
-
 
 
 logger = logging.getLogger('nbgwas_taskrunner')
@@ -35,6 +36,20 @@ def _parse_arguments(desc, args):
                         help='Time in seconds to wait'
                              'before looking for new'
                              'tasks')
+    parser.add_argument('--ndexserver', default='public.ndexbio.org',
+                        help='NDex server default is public.ndexbio.org')
+    parser.add_argument('--biggimserver',
+                        default='http://biggim.ncats.io/api',
+                        help='biggim REST service endpoint default is'
+                             'http://biggim.ncats.io/api')
+    parser.add_argument('--biggim_wait_time', default=1,
+                        help='Time in seconds to wait before checking'
+                             'status of biggim request (default 1)')
+    parser.add_argument('--biggim_wait_count', default=300,
+                        help='Number of times to check status of biggim'
+                             'request. Total wait time can be calculated'
+                             'by multiping this value (default 300) by '
+                             '--biggim_wait_time')
     parser.add_argument('--version', action='version',
                         version=('%(prog)s ' + nbgwas_rest.__version__))
     parser.add_argument('--verbose', '-v', action='count',
@@ -384,11 +399,17 @@ class NbgwasTaskRunner(object):
 
     def __init__(self, wait_time=30,
                  taskfactory=None,
-                 processor=None,
-                 ndex_server='public.ndexbio.org'):
+                 ndex_server=None,
+                 biggim_server=None,
+                 biggim_wait_time=1,
+                 biggim_wait_count=300,
+                 ):
         self._taskfactory = taskfactory
         self._wait_time = wait_time
         self._ndex_server = ndex_server
+        self._biggim_server = biggim_server
+        self._biggim_wait_time = biggim_wait_time
+        self._biggim_wait_count = biggim_wait_count
 
     def _get_networkx_object(self, task):
         """
@@ -410,6 +431,55 @@ class NbgwasTaskRunner(object):
             return self._get_networkx_object_from_ndex(ndex_id)
 
         return None
+
+    def _biggim_get_request(self, endpoint, data={}):
+        """
+        Runs get request to biggim server
+        :param endpoint:
+        :param data:
+        :raises HTTPError: if there was a problem with request
+        :return: result in json format
+        """
+        req = requests.get(self._biggim_server + '/' +
+                           endpoint, data=data)
+        req.raise_for_status()
+        return req.json()
+
+    def _get_networkx_object_from_biggim(self, data_name,
+                                         threshold=0.8):
+        """
+        Create networkx object appropriate for nbgwas
+        from biggim service
+        :return: networkx object upon success or None for failure
+        """
+        try:
+            studies = self._biggim_get_request('metadata/study')
+            study_names = [s['name'] for s in studies]
+            tables = self._biggim_get_request('/metadata/table')
+            default_table = [t for t in tables if t['default'] == True][0]['name']
+            query = {
+                "restriction_gt": f"{data_name},{threshold}",
+                "table": default_table,
+                "columns": "GTEx_Pancreas_Correlation",
+                "limit": 400000000
+            }
+            query_submit = self._biggim_get_request('biggim/query',
+                                                    data=query)
+
+            counter = 0
+            while counter <= self._biggim_wait_count:
+                qstatus = self._biggim_get_request('biggim/status/' +
+                                                    query_submit['request_id'])
+                if qstatus['status'] != 'running':
+                    return pd.concat(map(pd.read_csv, qstatus['request_uri']))
+                time.sleep(self._biggim_wait_time)
+                counter = counter + 1
+            logger.error('Wait time exceeded')
+            return None
+
+        except HTTPError as he:
+            logger.exception('Caught exception hitting biggim service')
+            return None
 
     def _get_networkx_object_from_sif_file(self, sif_file):
         """
@@ -588,7 +658,12 @@ def main(args):
 
         tfac = FileBasedSubmittedTaskFactory(ab_tdir)
         runner = NbgwasTaskRunner(taskfactory=tfac,
+                                  ndex_server=theargs.ndexserver,
+                                  biggim_server=theargs.biggimserver,
+                                  biggim_wait_time=theargs.biggim_wait_time,
+                                  biggim_wait_count=theargs.biggim_wait_count,
                                   wait_time=theargs.wait_time)
+
         runner.run_tasks()
     except Exception as e:
         logger.exception("Error caught exception")
