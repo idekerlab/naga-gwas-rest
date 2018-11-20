@@ -18,7 +18,15 @@ requirements = [
     'pandas',
     'ndex2',
     'flask',
-    'flask-restplus'
+    'flask-restplus',
+    'numpy',
+    'matplotlib',
+    'pandas',
+    'scipy',
+    'seaborn',
+    'tables', #For hdf5 reads
+    'python-igraph',
+    'py2cytoscape'
 ]
 
 setup_requirements = [ ]
@@ -31,6 +39,14 @@ test_requirements = [
     'ndex2',
     'flask',
     'flask-restplus',
+    'numpy',
+    'matplotlib',
+    'pandas',
+    'scipy',
+    'seaborn',
+    'tables',  # For hdf5 reads
+    'python-igraph',
+    'py2cytoscape',
     'unittest2'
 ]
 
