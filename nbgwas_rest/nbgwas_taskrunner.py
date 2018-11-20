@@ -430,6 +430,13 @@ class NbgwasTaskRunner(object):
         if ndex_id is not None:
             return self._get_networkx_object_from_ndex(ndex_id)
 
+        bigimval = task.get_bigim()
+        if bigimval is not None:
+            return self._get_networkx_object_from_biggim(bigimval)
+
+        logger.error('Task ' + task.get_task_summary_as_str() +
+                     'did not have one of the 3 required' +
+                     'parameters')
         return None
 
     def _biggim_get_request(self, endpoint, data={}):
