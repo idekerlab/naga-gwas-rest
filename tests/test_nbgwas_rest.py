@@ -13,8 +13,6 @@ import tempfile
 import re
 import io
 import uuid
-import threading
-import time
 
 
 import nbgwas_rest
