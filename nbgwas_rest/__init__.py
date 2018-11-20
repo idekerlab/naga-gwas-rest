@@ -399,7 +399,7 @@ class RestApp(Resource):
             if not os.path.isfile(result):
                 abort(500, 'No results found for task')
             with open(result, 'r') as f:
-                data = json.load(result)
+                data = json.load(f)
 
             return jsonify(data)
         except OSError as e:
