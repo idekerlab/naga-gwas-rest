@@ -53,11 +53,20 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 nbgwas_rest tests
 
+testmac: ## run tests quickly with pythonw for mac cause of matplotlib
+	pythonw setup.py test
+
 test: ## run tests quickly with the default Python
 	python setup.py test
 
 test-all: ## run tests on every Python version with tox
 	tox
+
+coveragemac: ## check code coverage quickly with pythonw for mac cause of matplotlib
+	pythonw /Users/churas/miniconda3/bin/coverage run --source nbgwas_rest setup.py test
+	coverage report -m
+	coverage html
+	$(BROWSER) htmlcov/index.html
 
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source nbgwas_rest setup.py test
