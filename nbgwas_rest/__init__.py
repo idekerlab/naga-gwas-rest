@@ -382,7 +382,7 @@ class TaskGetterApp(Resource):
         """
         Deletes task associated with id passed in
 
-        Currently not implemented and will always return code 503
+        Currently **not** implemented and will always return code 503
         """
         resp = flask.make_response()
         resp.data = 'Currently not implemented'
