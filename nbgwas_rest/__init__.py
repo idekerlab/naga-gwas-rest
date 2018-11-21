@@ -280,7 +280,13 @@ class TaskBasedRestApp(Resource):
         """
         Runs Network Boosted GWAS asynchronously
 
-        Some more information here
+        Upon success this endpoint will return a status code of 202
+        and in the header
+        set the Location to newly created task endpoint that can
+        be polled to
+        check on status. For more information on results
+        see GET /nbgwas/tasks/{id} endpoint
+
         """
         app.logger.debug("Begin!")
 
