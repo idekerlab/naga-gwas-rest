@@ -268,17 +268,31 @@ task_fields = api.model('tasks', {
                                                   'network from bigim?'),
 })
 
+post_parser = reqparse.RequestParser()
+post_parser.add_argument(ALPHA_PARAM, type=float,
+                        help='Alpha parameter to use in random walk function',
+                             location='form')
+post_parser.add_argument(SEEDS_PARAM, type=str,
+                             help='Comma delimited list of genes',
+                             location='form')
+post_parser.add_argument(NDEX_PARAM,
+                             location='form')
+post_parser.add_argument(COLUMN_PARAM, type=str, help='biggim',
+                             location='form')
+post_parser.add_argument(NETWORK_PARAM, type=reqparse.FileStorage,
+                             help='file in sif format', location='files')
+
+
 @api.doc('Runs NEtwork boosted gwas')
 @api.route('/nbgwas/tasks', endpoint='nbgswas/tasks')
 class TaskBasedRestApp(Resource):
-
     @api.doc('Runs Network Boosted GWAS',
              responses={
                  202: 'Success',
                  500: 'Internal server error'
              })
     @api.header(LOCATION, 'If successful, URL of created task', example='he')
-    @api.expect(task_fields)
+    @api.expect(post_parser)
     def post(self):
         """
         Runs Network Boosted GWAS asynchronously
@@ -383,7 +397,7 @@ class RestApp(Resource):
                  500: 'Internal server error'
              })
     @api.deprecated
-    @api.expect(task_fields)
+    @api.expect(post_parser)
     def post(self):
         """Runs Network Boosted GWAS"""
         app.logger.debug("Begin!")
