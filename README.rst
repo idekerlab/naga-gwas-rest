@@ -14,18 +14,19 @@ nbgwas_rest
         :alt: Documentation Status
 
 
-REST service for Network Boosted GWAS
+REST service for `Network Boosted Genome Wide Association Studies (NBGWAS) <https://github.com/shfong/nbgwas/>`_
 
+`For more information please click here to visit our wiki <https://github.com/coleslaw481/nbgwas_rest/wiki>`_
 
 Compatibility
 -------------
 
- * Works with Python 3.6, 3.7
+ * Tested with Python 3.6 in Anaconda_
 
 Dependencies to run
 -------------------
 
- * `nbgwas <https://github.com/shfong/nbgwas/>`_
+ * nbgwas_
  * `requests <https://pypi.org/project/requests/>`_
  * `networkx <https://pypi.org/project/networkx/>`_
  * `numpy <https://pypi.org/project/numpy/>`_
@@ -33,7 +34,12 @@ Dependencies to run
  * `pandas <https://pypi.org/project/pandas/>`_
  * `ndex2 <https://pypi.org/project/ndex2/>`_
  * `flask <https://pypi.org/project/flask/>`_
- * `flask-restful <https://pypi.org/project/flast-restful/>`_
+ * `flask-restplus <https://pypi.org/project/flast-restplus>`_
+ * `scipy <https://www.scipy.org/>`_
+ * `seaborn <https://seaborn.pydata.org/>`_
+ * `tables <https://pypi.org/project/tables/>`_
+ * `python-igraph <http://igraph.org/python/>`_
+ * `py2cytoscape <https://pypi.org/project/py2cytoscape/>`_
 
 Additional dependencies to build
 --------------------------------
@@ -97,31 +103,6 @@ Assuming the above is saved in a file named foo.py
   ./foo.py mytsv.tsv
 
 
-Running server under VM via Vagrant
------------------------------------
-
-These instructions will automatically install and configure nbgwas_rest and `nbgwas <https://github.com/shfong/nbgwas>`_ on a virtual machine and are the easiest way to get the system running. `Vagrant <https://https://www.vagrantup.com/>`_ and `Virtualbox <https://https://www.virtualbox.org/>`_ must installed prior to running the following commands:
-
-.. code:: bash
-
-  git clone https://github.com/coleslaw481/nbgwas_rest.git
-  cd nbgwas_rest
-
-  # launch Virtual Machine
-  vagrant up
-
-  # connect to Virtual Machine via ssh
-  vagrant ssh
-
-  # start nbgwas rest service
-  export FLASK_APP=nbgwas_rest
-  flask run --host=0.0.0.0
-
-  # From host compute service will be running on http://localhost:5000/nbgwas
-  
-  # To destroy virtual machine run from nbgwas_rest directory on host computer
-  vagrant destroy
-
 Bugs
 -----
 
@@ -130,7 +111,11 @@ Please report them `here <https://github.com/coleslaw481/nbgwas_rest/issues>`_
 Acknowledgements
 ----------------
 
+* Original implementation by `Samson Fong <https://github.com/shfong>`_
+
 * Initial template created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+.. _nbgwas: https://github.com/shfong/nbgwas
+.. _Anaconda: https://www.anaconda.com/
