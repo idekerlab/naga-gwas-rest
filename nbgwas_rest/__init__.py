@@ -415,7 +415,7 @@ class RestApp(Resource):
              description='Legacy REST service that runs NBGWAS and waits for result'
                          ' for more information see POST /nbgwas/tasks endpoint',
              responses={
-                 200: 'Success',
+                 200: ('Success `Is this code`'),
                  408: 'Internal server error or task took too long to run',
                  500: 'Internal server error'
              })
