@@ -273,7 +273,7 @@ class TaskBasedRestApp(Resource):
                  202: 'Success',
                  500: 'Internal server error'
              })
-    @api.header(LOCATION, 'If successful, URL of created task', example='he')
+    @api.header(LOCATION, 'URL endpoint to poll for result of task for successful call')
     @api.expect(post_parser)
     def post(self):
         """
