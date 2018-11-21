@@ -109,11 +109,13 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_post_ndex_id_too_long(self):
         pdict = {}
-        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4,
+        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
         pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
-        pdict[nbgwas_rest.NETWORK_PARAM] = ('asdflkasdfkljasdfalskdfja;klsd' +
-                                            'lskdjfas;ldjkfasd;flasdfdfsdfs' +
-                                            'sdfasdfasdfasdfasdfasdf  asdfs')
+        pdict[nbgwas_rest.NDEX_PARAM] = ('asdflkasdfkljasdfalskdfja;klsd' +
+                                         'lskdjfas;ldjkfasd;flasdfdfsdfs' +
+                                         'sdfasdfasdfasdfasdfasdf  asdfs' +
+                                         'asdfasdfasdfasdfasdfasdfasdfas' +
+                                         'asdfasdfasdfasdfasdfasdfasdfas')
         rv = self._app.post('nbgwas/tasks', data=pdict,
                             follow_redirects=True)
         self.assertEqual(rv.status_code, 500)
@@ -154,8 +156,6 @@ class TestNbgwas_rest(unittest.TestCase):
         rv = self._app.post('nbgwas/tasks', data=pdict,
                             follow_redirects=True)
 
-        sys.stdout.write(str(rv.data))
-        sys.stdout.flush()
         self.assertEqual(rv.status_code, 202)
         res = rv.headers['Location']
         self.assertTrue(res is not None)
@@ -185,8 +185,6 @@ class TestNbgwas_rest(unittest.TestCase):
         rv = self._app.post('nbgwas/tasks', data=pdict,
                             follow_redirects=True)
 
-        sys.stdout.write(str(rv.data))
-        sys.stdout.flush()
         self.assertEqual(rv.status_code, 202)
         res = rv.headers[nbgwas_rest.LOCATION]
         self.assertTrue(res is not None)
@@ -302,7 +300,6 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_legacy_post_no_params(self):
         rv = self._app.post('/nbgwas', follow_redirects=True)
-        sys.stdout.flush()
         self.assertEqual(rv.status_code, 500)
 
     def test_legacy_post_with_bigim_timesout(self):
