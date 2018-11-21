@@ -319,23 +319,27 @@ class TaskGetterApp(Resource):
     def get(self, id):
         """
         Gets result of task if completed
-        {id} is the id of the task obtained from Location field in
+        **{id}** is the id of the task obtained from **Location** field in
         header of /nbgwas/tasks POST endpoint
 
         The status will be returned in this json format:
 
         For incomplete/failed jobs
 
+        ```Bash
         {
           "status" : "notfound|submitted|processing|error"
         }
+        ```
 
-        For complete jobs an additional field result is included
+        For complete jobs an additional field result is included:
 
+        ```Bash
         {
           "status" : "done",
           "result" : { "GENE1": SCORE, "GENE2", SCORE2 }
         }
+        ```
         """
         hintlist = [request.remote_addr]
         taskpath = get_task(id, iphintlist=hintlist,
@@ -380,7 +384,7 @@ class TaskGetterApp(Resource):
 
     def delete(self, id):
         """
-        Deletes task associated with id passed in
+        Deletes task associated with **{id}** passed in
 
         Currently **not** implemented and will always return code 503
         """
