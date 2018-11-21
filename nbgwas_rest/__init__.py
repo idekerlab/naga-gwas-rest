@@ -279,13 +279,19 @@ class TaskBasedRestApp(Resource):
         """
         Runs Network Boosted GWAS asynchronously
 
-        Upon success this endpoint will return a status code of 202
-        and in the header
-        set the Location to newly created task endpoint that can
-        be polled to
-        check on status. For more information on results
-        see GET /nbgwas/tasks/{id} endpoint
+        This endpoint will return a status code of 202 for successful
+        submissions and in the **header**
+        the **Location** field will be set to newly created task endpoint
+        that can be polled to
+        check on status.
 
+        For more information on results see **GET /nbgwas/tasks/{id}** endpoint
+
+        Example value of **Location** in header field:
+
+        ```Bash
+        http://localhost/nbgwas/tasks/d4492df8-a7c9-42bc-acf0-b3f90d574aa4
+        ```
         """
         app.logger.debug("Begin!")
 
@@ -319,8 +325,10 @@ class TaskGetterApp(Resource):
     def get(self, id):
         """
         Gets result of task if completed
+
         **{id}** is the id of the task obtained from **Location** field in
-        header of /nbgwas/tasks POST endpoint
+        header of **/nbgwas/tasks POST** endpoint
+
 
         The status will be returned in this json format:
 
@@ -384,9 +392,9 @@ class TaskGetterApp(Resource):
 
     def delete(self, id):
         """
-        Deletes task associated with **{id}** passed in
+        Deletes task associated with {id} passed in
 
-        Currently **not** implemented and will always return code 503
+        Currently **NOT** implemented and will always return status code **503**
         """
         resp = flask.make_response()
         resp.data = 'Currently not implemented'
@@ -413,18 +421,21 @@ class RestApp(Resource):
         """Legacy NBGWAS POST endpoint
         Result is json in following format upon success:
 
+        ```Bash
         {
           "GENE1": SCORE1,
           "GENE2": SCORE2
         }
+        ```
 
         If there was a problem parsing a parameter then this json
         may be output in body
 
+        ```Bash
         {
           "message": "description of error"
         }
-
+        ```
         """
         app.logger.debug("Begin!")
 
