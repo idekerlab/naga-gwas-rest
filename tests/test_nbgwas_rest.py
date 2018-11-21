@@ -107,6 +107,17 @@ class TestNbgwas_rest(unittest.TestCase):
                             follow_redirects=True)
         self.assertEqual(rv.status_code, 500)
 
+    def test_post_ndex_id_too_long(self):
+        pdict = {}
+        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4,
+        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
+        pdict[nbgwas_rest.NETWORK_PARAM] = ('asdflkasdfkljasdfalskdfja;klsd' +
+                                            'lskdjfas;ldjkfasd;flasdfdfsdfs' +
+                                            'sdfasdfasdfasdfasdfasdf  asdfs')
+        rv = self._app.post('nbgwas/tasks', data=pdict,
+                            follow_redirects=True)
+        self.assertEqual(rv.status_code, 500)
+
     def test_post_bigim(self):
         pdict={}
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.4

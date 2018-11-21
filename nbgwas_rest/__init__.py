@@ -111,7 +111,7 @@ def get_done_dir():
     return os.path.join(app.config[JOB_PATH_KEY], DONE_STATUS)
 
 
-def create_task(request_obj):
+def create_task(params):
     """
     Creates a task by consuming data from request_obj passed in
     and persisting that information to the filesystem under
@@ -121,34 +121,27 @@ def create_task(request_obj):
     :param request_obj:
     :return: string that is a uuid which denotes directory name
     """
-    params = {}
-    params[ALPHA_PARAM] = float(request_obj.values.get(ALPHA_PARAM, 0.5))
-
-    if SEEDS_PARAM in request_obj.values:
-        params[SEEDS_PARAM] = request_obj.values[SEEDS_PARAM]
-
     params['uuid'] = get_uuid()
-    params['remoteip'] = request_obj.remote_addr
     taskpath = os.path.join(get_submit_dir(), params['remoteip'],
                             params['uuid'])
     os.makedirs(taskpath, mode=0o755)
 
     # Getting network
-    if NETWORK_PARAM in request_obj.files:
-        network_file = request_obj.files[NETWORK_PARAM]
-        app.logger.debug('Networkfile: ' + str(network_file))
+    if params[NETWORK_PARAM] is not None:
+        app.logger.debug('Networkfile: ' + str(params[NETWORK_PARAM]))
         networkfile_path = os.path.join(taskpath, NETWORK_DATA)
-
         with open(networkfile_path, 'wb') as f:
-            shutil.copyfileobj(network_file.stream, f)
+            shutil.copyfileobj(params[NETWORK_PARAM].stream, f)
             f.flush()
-    elif COLUMN_PARAM in request_obj.values:
-        app.logger.debug("Getting file from BigGIM")
-        # what is 0.8?
-        params[COLUMN_PARAM] = request_obj.values[COLUMN_PARAM]
-    elif NDEX_PARAM in request_obj.values:
-        app.logger.debug("Getting network from NDEx")
-        params[NDEX_PARAM] = request_obj.values[NDEX_PARAM]
+        params[NETWORK_PARAM] = None
+    elif params[COLUMN_PARAM] is not None:
+        params[COLUMN_PARAM] = str(params[COLUMN_PARAM]).strip()
+    elif params[NDEX_PARAM] is not None:
+        app.logger.debug("Validating ndex id")
+        params[NDEX_PARAM] = str(params[NDEX_PARAM]).strip()
+        if len(params[NDEX_PARAM]) > 40:
+            raise Exception(NDEX_PARAM + ' parameter value is too long to '
+                                         'be an NDex UUID')
     else:
         app.logger.error('Missing one of the required parameters')
         raise Exception('One of the three parameters must be '
@@ -255,7 +248,7 @@ def wait_for_task(uuidstr, hintlist=None):
 
 
 post_parser = reqparse.RequestParser()
-post_parser.add_argument(ALPHA_PARAM, type=float,
+post_parser.add_argument(ALPHA_PARAM, type=float, default=0.5,
                          help='Alpha parameter to use in random walk function',
                          location='form')
 post_parser.add_argument(SEEDS_PARAM, type=str,
@@ -290,7 +283,9 @@ class TaskBasedRestApp(Resource):
         app.logger.debug("Begin!")
 
         try:
-            res = create_task(request)
+            params = post_parser.parse_args(request, strict=True)
+            params['remoteip'] = request.remote_addr
+            res = create_task(params)
             resp = flask.make_response()
             resp.headers[LOCATION] = 'nbgwas/tasks/' + res
             resp.status_code = 202
@@ -391,7 +386,9 @@ class RestApp(Resource):
         app.logger.debug("Begin!")
 
         try:
-            res = create_task(request)
+            params = post_parser.parse_args(request, strict=True)
+            params['remoteip'] = request.remote_addr
+            res = create_task(params)
             hintlist = [request.remote_addr]
             taskpath = wait_for_task(res, hintlist=hintlist)
             if taskpath is None:
