@@ -15,11 +15,10 @@ import flask
 from flask import Flask, request, jsonify, Response
 from flask_restplus import reqparse, abort, Api, Resource, fields
 
-desc = """A REST service for an accessible, fast and customizable network propagation system 
+desc = """A REST service for an accessible, fast and customizable network propagation system
 for pathway interpretation of Genome Wide Association Studies (GWAS)
 """
 
-JSON_MIMETYPE = 'application/json'
 
 NBGWAS_REST_SETTINGS_ENV='NBGWAS_REST_SETTINGS'
 # global api object
@@ -255,32 +254,21 @@ def wait_for_task(uuidstr, hintlist=None):
     return taskpath
 
 
-task_fields = api.model('tasks', {
-    ALPHA_PARAM: fields.Float(0.2, min=0.0, max=1.0,
-                              description='Alpha parameter to use in random '
-                                          'walk function'),
-    NDEX_PARAM: fields.String(None, description='If set, grabs network'
-                                                ' matching ID from NDEX '
-                                                'http://http://www.ndexbio.'
-                                                'org/'),
-    SEEDS_PARAM: fields.String(None, description='Comma list of genes...'),
-    COLUMN_PARAM: fields.String(None, description='Setting this gets '
-                                                  'network from bigim?'),
-})
-
 post_parser = reqparse.RequestParser()
 post_parser.add_argument(ALPHA_PARAM, type=float,
-                        help='Alpha parameter to use in random walk function',
-                             location='form')
+                         help='Alpha parameter to use in random walk function',
+                         location='form')
 post_parser.add_argument(SEEDS_PARAM, type=str,
-                             help='Comma delimited list of genes',
-                             location='form')
+                         help='Comma delimited list of genes',
+                         location='form')
 post_parser.add_argument(NDEX_PARAM,
-                             location='form')
+                         help='UUID of network to load from'
+                              'NDex http://www.ndexbio.org',
+                         location='form')
 post_parser.add_argument(COLUMN_PARAM, type=str, help='biggim',
-                             location='form')
+                         location='form')
 post_parser.add_argument(NETWORK_PARAM, type=reqparse.FileStorage,
-                             help='file in sif format', location='files')
+                         help='Network file in sif format', location='files')
 
 
 @api.doc('Runs NEtwork boosted gwas')
