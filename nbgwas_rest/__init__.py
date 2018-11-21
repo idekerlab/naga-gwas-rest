@@ -281,7 +281,7 @@ class TaskBasedRestApp(Resource):
 
 
         This endpoint will return a status code of **202** for successful
-        submissions.
+        submissions.\n\n\n
 
 
         In addition the **Location** field in the **header**
