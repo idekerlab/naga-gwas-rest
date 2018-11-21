@@ -2,9 +2,16 @@
 
 # install base packages
 yum install -y epel-release git gzip tar
+yum install -y gcc gcc-c++ hdf5 hdf5-devel httpd httpd-devel
 
 # open port 5000 for http
 firewall-cmd --permanent --add-port=5000/tcp
+
+# open port 80 for http
+firewall-cmd --permanent --add-port=80/tcp
+
+# open port 8000 for http
+firewall-cmd --permanent --add-port=8000/tcp
 
 # restart firewalld
 service firewalld restart
@@ -27,6 +34,8 @@ conda install -y -c conda-forge python-igraph
 conda install -y -c anaconda flask
 conda install -y -c conda-forge flask-restplus 
 
+pip install mod_wsgi
+
 git clone https://github.com/ndexbio/ndex2-client.git
 pushd ndex2-client
 git checkout chrisdev
@@ -44,5 +53,20 @@ popd
 
 git clone https://github.com/coleslaw481/nbgwas_rest.git
 pushd nbgwas_rest
-python setup.py install
+git checkout taskbased
+make dist
+pip install dist/nbgwas*whl
+cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
 popd
+
+mkdir /var/www/nbgwas_rest
+echo "#!/usr/bin/env python" > /var/www/nbgwas_rest/nbgwas.wsgi
+echo "" >> /var/www/nbgwas_rest/nbgwas.wsgi
+echo "from nbgwas_rest import app as application" >> /var/www/nbgwas_rest/nbgwas.wsgi
+
+mod_wsgi-express module-config > 02-wsgi.conf > /etc/httpd/conf.modules.d/02-wsgi.conf
+
+# need to create /tmp/nbgwas directories
+# and tell SElinux its okay if apache writes to the directory
+# chcon -R -t httpd_sys_rw_content_t /tmp/nbgwas
+
