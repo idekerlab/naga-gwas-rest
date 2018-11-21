@@ -265,7 +265,6 @@ post_parser.add_argument(COLUMN_PARAM, type=str, help='biggim',
 post_parser.add_argument(NETWORK_PARAM, type=reqparse.FileStorage,
                          help='Network file in sif format', location='files')
 
-
 @api.doc('Runs NEtwork boosted gwas')
 @api.route('/nbgwas/tasks', endpoint='nbgswas/tasks')
 class TaskBasedRestApp(Resource):
@@ -382,9 +381,8 @@ class TaskGetterApp(Resource):
     def delete(self, id):
         """
         Deletes task associated with id passed in
-        :param id: task id to delete. If set to 'all' then all tasks coming
-                   from ip address will be deleted
-        :return: Currently not implemented and will always return code 503
+
+        Currently not implemented and will always return code 503
         """
         resp = flask.make_response()
         resp.data = 'Currently not implemented'
