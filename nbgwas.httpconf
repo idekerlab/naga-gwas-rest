@@ -1,0 +1,12 @@
+<VirtualHost *:80>
+    ServerName localhost
+
+    WSGIDaemonProcess nbgwas_rest user=apache group=apache threads=5
+    WSGIScriptAlias /rest /var/www/nbgwas_rest/nbgwas.wsgi
+
+    <Directory /var/www/nbgwas_rest>
+        WSGIProcessGroup nbgwas_rest
+        WSGIApplicationGroup %{GLOBAL}
+        Require all granted
+    </Directory>
+</VirtualHost>
