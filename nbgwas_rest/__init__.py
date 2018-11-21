@@ -279,13 +279,17 @@ class TaskBasedRestApp(Resource):
         """
         Runs Network Boosted GWAS asynchronously
 
-        This endpoint will return a status code of 202 for successful
-        submissions and in the **header**
-        the **Location** field will be set to newly created task endpoint
-        that can be polled to
-        check on status.
+
+        This endpoint will return a status code of **202** for successful
+        submissions.
+
+
+        In addition the **Location** field in the **header**
+        will be set to a REST endpoint that can be polled.
+
 
         For more information on results see **GET /nbgwas/tasks/{id}** endpoint
+
 
         Example value of **Location** in header field:
 
