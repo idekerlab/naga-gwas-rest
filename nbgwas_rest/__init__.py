@@ -133,6 +133,8 @@ def create_task(params):
         with open(networkfile_path, 'wb') as f:
             shutil.copyfileobj(params[NETWORK_PARAM].stream, f)
             f.flush()
+        app.logger.debug(networkfile_path + ' saved and it is ' +
+                         str(os.path.getsize(networkfile_path)) + ' bytes')
         params[NETWORK_PARAM] = None
     elif params[COLUMN_PARAM] is not None:
         params[COLUMN_PARAM] = str(params[COLUMN_PARAM]).strip()
@@ -303,15 +305,32 @@ class TaskGetterApp(Resource):
 
     @api.doc('Gets status and response of submitted NBGWAS task',
              responses={
-                 200: 'Success',
+                 200: 'Success in asking server, but does not mean'
+                      'task has completed. See the json response'
+                      'in body for status',
                  410: 'Task not found',
                  500: 'Internal server error'
              })
     def get(self, id):
         """
         Gets result of task if completed
-        :param id:
-        :return:
+        {id} is the id of the task obtained from Location field in
+        header of /nbgwas/tasks POST endpoint
+
+        The status will be returned in this json format:
+
+        For incomplete/failed jobs
+
+        {
+          "status" : "notfound|submitted|processing|error"
+        }
+
+        For complete jobs an additional field result is included
+
+        {
+          "status" : "done",
+          "result" : { "GENE1": SCORE, "GENE2", SCORE2 }
+        }
         """
         hintlist = [request.remote_addr]
         taskpath = get_task(id, iphintlist=hintlist,
@@ -373,7 +392,8 @@ class RestApp(Resource):
     """Old interface that returns the result immediately"""
 
     @api.doc('hello',
-             description='Legacy REST service that runs NBGWAS and waits for result',
+             description='Legacy REST service that runs NBGWAS and waits for result'
+                         ' for more information see POST /nbgwas/tasks endpoint',
              responses={
                  200: 'Success',
                  408: 'Internal server error or task took too long to run',
@@ -382,7 +402,22 @@ class RestApp(Resource):
     @api.deprecated
     @api.expect(post_parser)
     def post(self):
-        """Runs Network Boosted GWAS"""
+        """Legacy NBGWAS POST endpoint
+        Result is json in following format upon success:
+
+        {
+          "GENE1": SCORE1,
+          "GENE2": SCORE2
+        }
+
+        If there was a problem parsing a parameter then this json
+        may be output in body
+
+        {
+          "message": "description of error"
+        }
+
+        """
         app.logger.debug("Begin!")
 
         try:
