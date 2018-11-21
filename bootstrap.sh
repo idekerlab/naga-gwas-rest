@@ -2,7 +2,7 @@
 
 # install base packages
 yum install -y epel-release git gzip tar
-yum install -y gcc gcc-c++ hdf5 hdf5-devel httpd httpd-devel
+yum install -y wget bzip2 gcc gcc-c++ hdf5 hdf5-devel httpd httpd-devel
 
 # open port 5000 for http
 firewall-cmd --permanent --add-port=5000/tcp
@@ -64,9 +64,15 @@ echo "#!/usr/bin/env python" > /var/www/nbgwas_rest/nbgwas.wsgi
 echo "" >> /var/www/nbgwas_rest/nbgwas.wsgi
 echo "from nbgwas_rest import app as application" >> /var/www/nbgwas_rest/nbgwas.wsgi
 
-mod_wsgi-express module-config > 02-wsgi.conf > /etc/httpd/conf.modules.d/02-wsgi.conf
+mkdir -p /var/www/nbgwas_rest/data/submitted
+mkdir -p /var/www/nbgwas_rest/data/processing
+mkdir -p /var/www/nbgwas_rest/data/done
+
+chmod -R apache.apache /var/www/nbgwas_rest/data
+
+mod_wsgi-express module-config > /etc/httpd/conf.modules.d/02-wsgi.conf
 
 # need to create /tmp/nbgwas directories
 # and tell SElinux its okay if apache writes to the directory
-# chcon -R -t httpd_sys_rw_content_t /tmp/nbgwas
+chcon -R -t httpd_sys_rw_content_t /var/www/nbgwas_rest/data
 
