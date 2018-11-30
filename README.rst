@@ -9,9 +9,7 @@ nbgwas_rest
 .. image:: https://img.shields.io/travis/coleslaw481/nbgwas_rest.svg
         :target: https://travis-ci.org/coleslaw481/nbgwas_rest
 
-.. image:: https://readthedocs.org/projects/nbgwas-rest/badge/?version=latest
-        :target: https://nbgwas-rest.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+
 
 
 REST service for `Network Boosted Genome Wide Association Studies (NBGWAS) <https://github.com/shfong/nbgwas/>`_
@@ -70,6 +68,9 @@ Running server in development mode
   flask run # --host=0.0.0.0 can be added to allow all access from interfaces
   
   # Service will be running on http://localhost:5000/nbgwas
+
+  # NOTE: To have tasks processed nbgwas_taskrunner.py must be started in
+  # another terminal
 
 Example usage of service
 ------------------------
