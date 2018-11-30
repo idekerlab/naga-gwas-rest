@@ -3,6 +3,8 @@
 
 """The setup script."""
 
+import os
+import re
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -10,6 +12,11 @@ with open('README.rst') as readme_file:
 
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
+
+with open(os.path.join('nbgwas_rest', '__init__.py')) as ver_file:
+    for line in ver_file:
+        if line.startswith('__version__'):
+            version=re.sub("'", "", line[line.index("'"):])
 
 requirements = [
     'argparse',
@@ -77,6 +84,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/coleslaw481/nbgwas_rest',
-    version='0.1.0',
+    version=version,
     zip_safe=False,
 )
