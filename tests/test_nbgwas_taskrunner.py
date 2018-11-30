@@ -4,14 +4,11 @@
 """Tests for `nbgwas_taskrunner` script."""
 
 import os
-import sys
 import json
 import unittest
 import shutil
 import tempfile
-import re
-import io
-import uuid
+
 
 import nbgwas_rest
 from nbgwas_rest import nbgwas_taskrunner as nt
@@ -139,7 +136,7 @@ class TestNbgwas_rest(unittest.TestCase):
             task.set_taskdir(temp_dir)
             self.assertEqual(task.save_task(), 'Task dict is None')
 
-            #try with taskdir set to file
+            # try with taskdir set to file
             task.set_taskdict('hi')
             somefile = os.path.join(temp_dir, 'somefile')
             open(somefile, 'a').close()
@@ -202,7 +199,6 @@ class TestNbgwas_rest(unittest.TestCase):
             self.assertTrue(nbgwas_rest.PROCESSING_STATUS in
                             task.get_taskdir())
 
-
             # try a move from process to done
             self.assertEqual(task.move_task(nbgwas_rest.DONE_STATUS),
                              None)
@@ -238,7 +234,5 @@ class TestNbgwas_rest(unittest.TestCase):
                 data = json.load(f)
                 self.assertEqual(data[nbgwas_rest.ERROR_PARAM],
                                  'bad')
-
-
         finally:
             shutil.rmtree(temp_dir)

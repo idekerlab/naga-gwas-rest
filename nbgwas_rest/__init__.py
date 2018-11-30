@@ -12,8 +12,9 @@ import json
 import uuid
 import time
 import flask
-from flask import Flask, request, jsonify, Response
-from flask_restplus import reqparse, abort, Api, Resource, fields
+from flask import Flask, request, jsonify
+from flask_restplus import reqparse, abort, Api, Resource
+
 
 desc = """This system is designed to use biological networks to analyze GWAS results.
 
@@ -22,25 +23,22 @@ A GWAS association score is assigned to the genes. A molecular network is downlo
  enrichment for previously discovered biology. 
  
  See https://github.com/shfong/nbgwas for details.
-"""
+""" # noqa
 
-
-NBGWAS_REST_SETTINGS_ENV='NBGWAS_REST_SETTINGS'
+NBGWAS_REST_SETTINGS_ENV = 'NBGWAS_REST_SETTINGS'
 # global api object
 app = Flask(__name__)
 
 JOB_PATH_KEY = 'JOB_PATH'
 WAIT_COUNT_KEY = 'WAIT_COUNT'
 SLEEP_TIME_KEY = 'SLEEP_TIME'
-SEQUENTIAL_UUID_KEY='SEQUENTIAL_UUID'
-
+SEQUENTIAL_UUID_KEY = 'SEQUENTIAL_UUID'
 
 app.config[JOB_PATH_KEY] = '/tmp'
 app.config[WAIT_COUNT_KEY] = 60
 app.config[SLEEP_TIME_KEY] = 10
 
 app.config.from_envvar(NBGWAS_REST_SETTINGS_ENV, silent=True)
-
 
 TASK_JSON = 'task.json'
 NETWORK_DATA = 'network.data'
@@ -55,7 +53,6 @@ PROCESSING_STATUS = 'processing'
 DONE_STATUS = 'done'
 ERROR_STATUS = 'error'
 RESULT_KEY = 'result'
-
 
 api = Api(app, version=str(__version__),
           title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
@@ -277,6 +274,7 @@ post_parser.add_argument(COLUMN_PARAM, type=str, help='biggim',
 post_parser.add_argument(NETWORK_PARAM, type=reqparse.FileStorage,
                          help='Network file in sif format', location='files')
 
+
 @api.doc('Runs NEtwork boosted gwas')
 @api.route('/nbgwas/tasks', endpoint='nbgswas/tasks')
 class TaskBasedRestApp(Resource):
@@ -285,7 +283,8 @@ class TaskBasedRestApp(Resource):
                  202: 'Success',
                  500: 'Internal server error'
              })
-    @api.header(LOCATION, 'URL endpoint to poll for result of task for successful call')
+    @api.header(LOCATION, 'URL endpoint to poll for result of task for '
+                          'successful call')
     @api.expect(post_parser)
     def post(self):
         """
@@ -397,7 +396,8 @@ class TaskGetterApp(Resource):
         """
         Deletes task associated with {id} passed in
 
-        Currently **NOT** implemented and will always return status code **503**
+        Currently **NOT** implemented and will always return status code
+        **503**
         """
         resp = flask.make_response()
         resp.data = 'Currently not implemented'
@@ -405,14 +405,16 @@ class TaskGetterApp(Resource):
         return resp
 
 
-@api.doc('Runs Network Boosted GWAS in legacy mode', example='class level examplexxxx')
+@api.doc('Runs Network Boosted GWAS in legacy mode',
+         example='class level examplexxxx')
 @api.route('/nbgwas', endpoint='nbgswas')
 class RestApp(Resource):
     """Old interface that returns the result immediately"""
 
     @api.doc('hello',
-             description='Legacy REST service that runs NBGWAS and waits for result'
-                         ' for more information see **POST /nbgwas/tasks** endpoint',
+             description='Legacy REST service that runs NBGWAS and waits for '
+                         'result for more information see '
+                         '**POST /nbgwas/tasks** endpoint',
              responses={
                  200: ('Success. In body, json of following format will be'
                        ' output: `{"GENE1": SCORE1, "GENE2": SCORE2}`'),
@@ -460,6 +462,6 @@ class RestApp(Resource):
                 data = json.load(f)
 
             return jsonify(data)
-        except OSError as e:
+        except OSError:
             app.logger.exception('Error creating task')
             abort(500, 'Unable to create task')

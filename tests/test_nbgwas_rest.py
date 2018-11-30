@@ -5,7 +5,6 @@
 
 
 import os
-import sys
 import json
 import unittest
 import shutil
@@ -58,7 +57,7 @@ class TestNbgwas_rest(unittest.TestCase):
     def test_get_task_basedir_not_a_directory(self):
         somefile = os.path.join(self._temp_dir, 'hi')
         open(somefile, 'a').close()
-        self.assertEqual(nbgwas_rest.get_task('foo',basedir=somefile), None)
+        self.assertEqual(nbgwas_rest.get_task('foo', basedir=somefile), None)
 
     def test_get_task_for_none_uuid(self):
         self.assertEqual(nbgwas_rest.get_task(None,
@@ -121,7 +120,7 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(rv.status_code, 500)
 
     def test_post_bigim(self):
-        pdict={}
+        pdict = {}
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
         pdict[nbgwas_rest.COLUMN_PARAM] = 'someid'
         pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
@@ -133,7 +132,7 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertTrue(res is not None)
         self.assertTrue('/nbgwas/tasks/' in res)
 
-        uuidstr = re.sub('^.*\/', '', res)
+        uuidstr = re.sub('^.*/', '', res)
         nbgwas_rest.app.config[nbgwas_rest.JOB_PATH_KEY] = self._temp_dir
 
         tpath = nbgwas_rest.get_task(uuidstr,
@@ -161,7 +160,7 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertTrue(res is not None)
         self.assertTrue('/nbgwas/tasks/' in res)
 
-        uuidstr = re.sub('^.*\/', '', res)
+        uuidstr = re.sub('^.*/', '', res)
         nbgwas_rest.app.config[nbgwas_rest.JOB_PATH_KEY] = self._temp_dir
 
         tpath = nbgwas_rest.get_task(uuidstr,
@@ -190,7 +189,7 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertTrue(res is not None)
         self.assertTrue('/nbgwas/tasks/' in res)
 
-        uuidstr = re.sub('^.*\/', '', res)
+        uuidstr = re.sub('^.*/', '', res)
         nbgwas_rest.app.config[nbgwas_rest.JOB_PATH_KEY] = self._temp_dir
 
         tpath = nbgwas_rest.get_task(uuidstr,

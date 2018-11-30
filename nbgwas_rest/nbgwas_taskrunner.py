@@ -373,7 +373,7 @@ class FileBasedSubmittedTaskFactory(object):
         """
         logger.debug('Cleaning up problem ' + str(len(self._problemlist)) +
                      ' tasks')
-        emsg='Unknown error with task'
+        emsg = 'Unknown error with task'
         for entry in self._problemlist:
             t = FileBasedTask(entry, {})
             t.move_task(nbgwas_rest.ERROR_STATUS, error_message=emsg)
@@ -385,6 +385,7 @@ class FileBasedSubmittedTaskFactory(object):
         :return:
         """
         return len(self._problemlist)
+
 
 class NbgwasTaskRunner(object):
     """
@@ -460,10 +461,9 @@ class NbgwasTaskRunner(object):
         :return: networkx object upon success or None for failure
         """
         try:
-            studies = self._biggim_get_request('metadata/study')
-            study_names = [s['name'] for s in studies]
             tables = self._biggim_get_request('/metadata/table')
-            default_table = [t for t in tables if t['default'] == True][0]['name']
+            default_table = [t for t in tables if t['default'] is
+                             True][0]['name']
             query = {
                 "restriction_gt": f"{data_name},{threshold}",
                 "table": default_table,
@@ -476,7 +476,7 @@ class NbgwasTaskRunner(object):
             counter = 0
             while counter <= self._biggim_wait_count:
                 qstatus = self._biggim_get_request('biggim/status/' +
-                                                    query_submit['request_id'])
+                                                   query_submit['request_id'])
                 if qstatus['status'] != 'running':
                     return pd.concat(map(pd.read_csv, qstatus['request_uri']))
                 time.sleep(self._biggim_wait_time)
@@ -484,7 +484,7 @@ class NbgwasTaskRunner(object):
             logger.error('Wait time exceeded')
             return None
 
-        except HTTPError as he:
+        except HTTPError:
             logger.exception('Caught exception hitting biggim service')
             return None
 
@@ -672,7 +672,7 @@ def main(args):
                                   wait_time=theargs.wait_time)
 
         runner.run_tasks()
-    except Exception as e:
+    except Exception:
         logger.exception("Error caught exception")
         return 2
     finally:
