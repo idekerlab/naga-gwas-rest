@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 import os
 import shutil
@@ -15,8 +15,13 @@ import flask
 from flask import Flask, request, jsonify, Response
 from flask_restplus import reqparse, abort, Api, Resource, fields
 
-desc = """A REST service for an accessible, fast and customizable network propagation system
-for pathway interpretation of Genome Wide Association Studies (GWAS)
+desc = """This system is designed to use biological networks to analyze GWAS results.
+
+A GWAS association score is assigned to the genes. A molecular network is downloaded from the NDEx database, and network propagation is performed, providing a set of
+ new scores for each gene. The top hits on this list form a new subnetwork, which can be compared to a set of gold standard genes in order to evaluate the
+ enrichment for previously discovered biology. 
+ 
+ See https://github.com/shfong/nbgwas for details.
 """
 
 
@@ -251,14 +256,21 @@ def wait_for_task(uuidstr, hintlist=None):
 
 post_parser = reqparse.RequestParser()
 post_parser.add_argument(ALPHA_PARAM, type=float, default=0.5,
-                         help='Alpha parameter to use in random walk function',
+                         help='Sets propagation constant alpha with allowed '
+                              'values between 0 and 1, representing the '
+                              'probability of walking to network neighbors '
+                              'as opposed to reseting to the original '
+                              'distribution. Larger values induce more '
+                              'spread on the network.',
                          location='form')
 post_parser.add_argument(SEEDS_PARAM, type=str,
                          help='Comma delimited list of genes',
                          location='form')
 post_parser.add_argument(NDEX_PARAM,
-                         help='UUID of network to load from'
-                              'NDex http://www.ndexbio.org',
+                         help='NDex (http://www.ndexbio.org) UUID of network '
+                              'to load. For example, to use the Parsimonious '
+                              'Composite Network (PCNet), one would use this:'
+                              ' f93f402c-86d4-11e7-a10d-0ac135e8bacf',
                          location='form')
 post_parser.add_argument(COLUMN_PARAM, type=str, help='biggim',
                          location='form')
@@ -279,23 +291,10 @@ class TaskBasedRestApp(Resource):
         """
         Runs Network Boosted GWAS asynchronously
 
-
         This endpoint will return a status code of **202** for successful
-        submissions.\n\n\n
-
-
-        In addition the **Location** field in the **header**
-        will be set to a REST endpoint that can be polled.
-
-
+        submissions and set the **Location** field in the **HEADERS** to
+        a REST endpoint that can be queried for job status.
         For more information on results see **GET /nbgwas/tasks/{id}** endpoint
-
-
-        Example value of **Location** in header field:
-
-        ```Bash
-        http://localhost/nbgwas/tasks/d4492df8-a7c9-42bc-acf0-b3f90d574aa4
-        ```
         """
         app.logger.debug("Begin!")
 
@@ -331,7 +330,7 @@ class TaskGetterApp(Resource):
         Gets result of task if completed
 
         **{id}** is the id of the task obtained from **Location** field in
-        header of **/nbgwas/tasks POST** endpoint
+        **HEADERS** of **/nbgwas/tasks POST** endpoint
 
 
         The status will be returned in this json format:
@@ -413,7 +412,7 @@ class RestApp(Resource):
 
     @api.doc('hello',
              description='Legacy REST service that runs NBGWAS and waits for result'
-                         ' for more information see POST /nbgwas/tasks endpoint',
+                         ' for more information see **POST /nbgwas/tasks** endpoint',
              responses={
                  200: ('Success. In body, json of following format will be'
                        ' output: `{"GENE1": SCORE1, "GENE2": SCORE2}`'),
