@@ -2,28 +2,21 @@
 
 language: python
 python:
-  - 3.6
-  - 3.5
-  - 3.4
-  - 2.7
+  
+  - "3.6"
 
-# Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox-travis
+# Enable 3.7 without globally enabling sudo and dist: xenial for other build jobs
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 
-# Command to run tests, e.g. python setup.py test
-script: tox
+# command to install dependencies
+install: 
+  - pip install coveralls
+  - pip install .
+# command to run tests
+script: coverage run --source nbgwas_rest setup.py test
 
-# Assuming you have installed the travis-ci CLI tool, after you
-# create the Github repo and add it to Travis, run the
-# following command to finish PyPI deployment setup:
-# $ travis encrypt --add deploy.password
-deploy:
-  provider: pypi
-  distributions: sdist bdist_wheel
-  user: coleslaw481
-  password:
-    secure: PLEASE_REPLACE_ME
-  on:
-    tags: true
-    repo: coleslaw481/nbgwas_rest
-    python: 3.6
+after_success: coveralls
