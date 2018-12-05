@@ -181,7 +181,7 @@ class TestNbgwas_rest(unittest.TestCase):
         pdict[nbgwas_rest.NETWORK_PARAM] = (io.BytesIO(b'hi there'), 'yo.txt')
         pdict[nbgwas_rest.SEEDS_PARAM] = 'haha'
 
-        rv = self._app.post('nbgwas/tasks', data=pdict,
+        rv = self._app.post('nbgwas/snpanalyzer', data=pdict,
                             follow_redirects=True)
 
         self.assertEqual(rv.status_code, 202)
@@ -296,26 +296,3 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_log_task_json_file_with_none(self):
         self.assertEqual(nbgwas_rest.log_task_json_file(None), None)
-
-    def test_legacy_post_no_params(self):
-        rv = self._app.post('/nbgwas', follow_redirects=True)
-        self.assertEqual(rv.status_code, 500)
-
-    def test_legacy_post_with_bigim_timesout(self):
-        pdict = {}
-        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
-        pdict[nbgwas_rest.COLUMN_PARAM] = 'someid'
-        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
-        rv = self._app.post('/nbgwas', data=pdict,
-                            follow_redirects=True)
-        self.assertEqual(rv.status_code, 408)
-
-    def test_legacy_post_with_ndex_timesout(self):
-        nbgwas_rest.app.config[nbgwas_rest.SEQUENTIAL_UUID_KEY] = True
-        pdict = {}
-        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
-        pdict[nbgwas_rest.NDEX_PARAM] = 'ndex'
-        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
-        rv = self._app.post('/nbgwas', data=pdict,
-                            follow_redirects=True)
-        self.assertEqual(rv.status_code, 408)

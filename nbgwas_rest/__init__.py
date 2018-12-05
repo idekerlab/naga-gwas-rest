@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 
 import os
 import shutil
@@ -61,12 +61,14 @@ app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 
 ALPHA_PARAM = 'alpha'
 NETWORK_PARAM = 'network'
-COLUMN_PARAM = 'column'
-SEEDS_PARAM = 'seeds'
 NDEX_PARAM = 'ndex'
 REMOTEIP_PARAM = 'remoteip'
 UUID_PARAM = 'uuid'
 ERROR_PARAM = 'error'
+WINDOW_PARAM = 'window'
+SNP_LEVEL_SUMMARY_PARAM = 'snp_level_summary'
+
+SNP_ANALYZER_TASK = 'snpanalyzer'
 
 uuid_counter = 1
 
@@ -124,33 +126,31 @@ def create_task(params):
     :return: string that is a uuid which denotes directory name
     """
     params['uuid'] = get_uuid()
+    params['tasktype'] = SNP_ANALYZER_TASK
     taskpath = os.path.join(get_submit_dir(), params['remoteip'],
                             params['uuid'])
     os.makedirs(taskpath, mode=0o755)
 
     # Getting network
-    if params[NETWORK_PARAM] is not None:
-        app.logger.debug('Networkfile: ' + str(params[NETWORK_PARAM]))
-        networkfile_path = os.path.join(taskpath, NETWORK_DATA)
-        with open(networkfile_path, 'wb') as f:
-            shutil.copyfileobj(params[NETWORK_PARAM].stream, f)
-            f.flush()
-        app.logger.debug(networkfile_path + ' saved and it is ' +
-                         str(os.path.getsize(networkfile_path)) + ' bytes')
-        params[NETWORK_PARAM] = None
-    elif params[COLUMN_PARAM] is not None:
-        params[COLUMN_PARAM] = str(params[COLUMN_PARAM]).strip()
-    elif params[NDEX_PARAM] is not None:
-        app.logger.debug("Validating ndex id")
-        params[NDEX_PARAM] = str(params[NDEX_PARAM]).strip()
-        if len(params[NDEX_PARAM]) > 40:
-            raise Exception(NDEX_PARAM + ' parameter value is too long to '
-                                         'be an NDex UUID')
-    else:
-        app.logger.error('Missing one of the required parameters')
-        raise Exception('One of the three parameters must be '
-                        'passed with request: ' + NETWORK_PARAM +
-                        ', ' + COLUMN_PARAM + ', ' + NDEX_PARAM)
+    if params[SNP_LEVEL_SUMMARY_PARAM] is None:
+        raise Exception(SNP_LEVEL_SUMMARY_PARAM + ' is required')
+
+    app.logger.debug('snp level summary: ' + str(params[NETWORK_PARAM]))
+    networkfile_path = os.path.join(taskpath, NETWORK_DATA)
+    with open(networkfile_path, 'wb') as f:
+        shutil.copyfileobj(params[NETWORK_PARAM].stream, f)
+        f.flush()
+    app.logger.debug(networkfile_path + ' saved and it is ' +
+                     str(os.path.getsize(networkfile_path)) + ' bytes')
+
+    if params[NDEX_PARAM] is None:
+        raise Exception(NDEX_PARAM + ' is required')
+
+    app.logger.debug("Validating ndex id")
+    params[NDEX_PARAM] = str(params[NDEX_PARAM]).strip()
+    if len(params[NDEX_PARAM]) > 40:
+        raise Exception(NDEX_PARAM + ' parameter value is too long to '
+                                     'be an NDex UUID')
 
     tmp_task_json = TASK_JSON + '.tmp'
     taskfilename = os.path.join(taskpath, tmp_task_json)
@@ -252,31 +252,35 @@ def wait_for_task(uuidstr, hintlist=None):
 
 
 post_parser = reqparse.RequestParser()
-post_parser.add_argument(ALPHA_PARAM, type=float, default=0.5,
+post_parser.add_argument(ALPHA_PARAM, type=float,
                          help='Sets propagation constant alpha with allowed '
                               'values between 0 and 1, representing the '
                               'probability of walking to network neighbors '
                               'as opposed to reseting to the original '
                               'distribution. Larger values induce more '
-                              'spread on the network.',
+                              'spread on the network. If unset, then optimal'
+                              ' parameter is selected by linear model derived'
+                              ' from (huang, cell systems 2018)',
                          location='form')
-post_parser.add_argument(SEEDS_PARAM, type=str,
-                         help='Comma delimited list of genes',
+post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
+                         help='Window search size in base pairs used in snp search',
                          location='form')
-post_parser.add_argument(NDEX_PARAM,
+
+post_parser.add_argument('protein_coding', choices=['hg18', 'hg19'], default='hg19',
+                         help='Sets which protein coding table to use data related'
+                              'to NCBI human genome build hg18 or hg19')
+post_parser.add_argument(NDEX_PARAM, required=True,
                          help='NDex (http://www.ndexbio.org) UUID of network '
                               'to load. For example, to use the Parsimonious '
                               'Composite Network (PCNet), one would use this:'
                               ' f93f402c-86d4-11e7-a10d-0ac135e8bacf',
                          location='form')
-post_parser.add_argument(COLUMN_PARAM, type=str, help='biggim',
-                         location='form')
-post_parser.add_argument(NETWORK_PARAM, type=reqparse.FileStorage,
-                         help='Network file in sif format', location='files')
+post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage, required=True,
+                         help='Comma delimited file with format of chromosome,basepair,p_value', location='files')
 
 
 @api.doc('Runs NEtwork boosted gwas')
-@api.route('/nbgwas/tasks', endpoint='nbgswas/tasks')
+@api.route('/nbgwas/snpanalyzer', endpoint='nbgswas/snpanalyzer')
 class TaskBasedRestApp(Resource):
     @api.doc('Runs Network Boosted GWAS',
              responses={
@@ -302,7 +306,7 @@ class TaskBasedRestApp(Resource):
             params['remoteip'] = request.remote_addr
             res = create_task(params)
             resp = flask.make_response()
-            resp.headers[LOCATION] = 'nbgwas/tasks/' + res
+            resp.headers[LOCATION] = 'nbgwas/snpanalyzer/' + res
             resp.status_code = 202
             return resp
         except OSError as e:
@@ -313,23 +317,23 @@ class TaskBasedRestApp(Resource):
             abort(500, 'Unable to create task ' + str(ea))
 
 
-@api.route('/nbgwas/tasks/<string:id>', endpoint='nbgwas/tasks')
+@api.route('/nbgwas/snpanalyzer/<string:id>', endpoint='nbgwas/snpanalyzer')
 class TaskGetterApp(Resource):
 
-    @api.doc('Gets status and response of submitted NBGWAS task',
+    @api.doc('Gets status and response of submitted NBGWAS snpanalyzer',
              responses={
                  200: 'Success in asking server, but does not mean'
-                      'task has completed. See the json response'
+                      'snpanalyzer has completed. See the json response'
                       'in body for status',
                  410: 'Task not found',
                  500: 'Internal server error'
              })
     def get(self, id):
         """
-        Gets result of task if completed
+        Gets result of snpanalyzer if completed
 
-        **{id}** is the id of the task obtained from **Location** field in
-        **HEADERS** of **/nbgwas/tasks POST** endpoint
+        **{id}** is the id of the snpanalyzer obtained from **Location** field in
+        **HEADERS** of **/nbgwas/snpanalyzer POST** endpoint
 
 
         The status will be returned in this json format:
@@ -403,65 +407,3 @@ class TaskGetterApp(Resource):
         resp.data = 'Currently not implemented'
         resp.status_code = 503
         return resp
-
-
-@api.doc('Runs Network Boosted GWAS in legacy mode',
-         example='class level examplexxxx')
-@api.route('/nbgwas', endpoint='nbgswas')
-class RestApp(Resource):
-    """Old interface that returns the result immediately"""
-
-    @api.doc('hello',
-             description='Legacy REST service that runs NBGWAS and waits for '
-                         'result for more information see '
-                         '**POST /nbgwas/tasks** endpoint',
-             responses={
-                 200: ('Success. In body, json of following format will be'
-                       ' output: `{"GENE1": SCORE1, "GENE2": SCORE2}`'),
-                 408: 'Internal server error or task took too long to run',
-                 500: 'Internal server error'
-             })
-    @api.deprecated
-    @api.expect(post_parser)
-    def post(self):
-        """Legacy NBGWAS POST endpoint
-        Result is json in following format upon success:
-
-        ```Bash
-        {
-          "GENE1": SCORE1,
-          "GENE2": SCORE2
-        }
-        ```
-
-        If there was a problem parsing a parameter then this json
-        may be output in body
-
-        ```Bash
-        {
-          "message": "description of error"
-        }
-        ```
-        """
-        app.logger.debug("Begin!")
-
-        try:
-            params = post_parser.parse_args(request, strict=True)
-            params['remoteip'] = request.remote_addr
-            res = create_task(params)
-            hintlist = [request.remote_addr]
-            taskpath = wait_for_task(res, hintlist=hintlist)
-            if taskpath is None:
-                abort(408, 'There was an internal problem or the task'
-                           'took too long to run')
-
-            result = os.path.join(taskpath, RESULT)
-            if not os.path.isfile(result):
-                abort(500, 'No results found for task')
-            with open(result, 'r') as f:
-                data = json.load(f)
-
-            return jsonify(data)
-        except OSError:
-            app.logger.exception('Error creating task')
-            abort(500, 'Unable to create task')
