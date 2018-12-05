@@ -2,7 +2,7 @@
 
 # install base packages
 yum install -y epel-release git gzip tar
-yum install -y wget bzip2 gcc gcc-c++ hdf5 hdf5-devel httpd httpd-devel
+yum install -y wget bzip2 bzip2-utils bzip2-devel gcc gcc-c++ hdf5 hdf5-devel httpd httpd-devel lzo lzo-devel blosc-devel blosc
 
 # open port 5000 for http
 firewall-cmd --permanent --add-port=5000/tcp
@@ -60,19 +60,34 @@ cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
 popd
 
 mkdir /var/www/nbgwas_rest
-echo "#!/usr/bin/env python" > /var/www/nbgwas_rest/nbgwas.wsgi
-echo "" >> /var/www/nbgwas_rest/nbgwas.wsgi
-echo "from nbgwas_rest import app as application" >> /var/www/nbgwas_rest/nbgwas.wsgi
 
-mkdir -p /var/www/nbgwas_rest/data/submitted
-mkdir -p /var/www/nbgwas_rest/data/processing
-mkdir -p /var/www/nbgwas_rest/data/done
+# write the WSGI file
+cat <<EOF > /var/www/nbgwas_rest/nbgwas.wsgi
+#!/usr/bin/env python
 
-chmod -R apache.apache /var/www/nbgwas_rest/data
+import os
+os.environ['NBGWAS_REST_SETTINGS']="/var/www/nbgwas_rest/nbgwas.cfg"
+
+from nbgwas_rest import app as application
+EOF
+
+# write the configuration file
+cat <<EOF > /var/www/nbgwas_rest/nbgwas.cfg
+JOB_PATH="/var/www/nbgwas_rest/tasks"
+WAIT_COUNT=600
+SLEEP_TIME=1
+EOF
+
+
+mkdir -p /var/www/nbgwas_rest/tasks/submitted
+mkdir -p /var/www/nbgwas_rest/tasks/processing
+mkdir -p /var/www/nbgwas_rest/tasks/done
+
+chown -R apache.apache /var/www/nbgwas_rest/tasks
 
 mod_wsgi-express module-config > /etc/httpd/conf.modules.d/02-wsgi.conf
 
-# need to create /tmp/nbgwas directories
 # and tell SElinux its okay if apache writes to the directory
-chcon -R -t httpd_sys_rw_content_t /var/www/nbgwas_rest/data
+
+chcon -R -t httpd_sys_rw_content_t /var/www/nbgwas_rest/tasks
 
