@@ -33,7 +33,6 @@ app = Flask(__name__)
 JOB_PATH_KEY = 'JOB_PATH'
 WAIT_COUNT_KEY = 'WAIT_COUNT'
 SLEEP_TIME_KEY = 'SLEEP_TIME'
-SEQUENTIAL_UUID_KEY = 'SEQUENTIAL_UUID'
 
 app.config[JOB_PATH_KEY] = '/tmp'
 app.config[WAIT_COUNT_KEY] = 60
@@ -86,13 +85,6 @@ def get_uuid():
     then uuid_counter is returned and incremented
     :return: uuid as string
     """
-    if SEQUENTIAL_UUID_KEY in app.config:
-        if app.config[SEQUENTIAL_UUID_KEY] is True:
-            global uuid_counter
-            sequuid = str(uuid_counter)
-
-            uuid_counter = uuid_counter + 1
-            return sequuid
     return str(uuid.uuid4())
 
 
@@ -133,12 +125,13 @@ def create_task(params):
     """
     params['uuid'] = get_uuid()
     params['tasktype'] = SNP_ANALYZER_TASK
-    taskpath = os.path.join(get_submit_dir(), params['remoteip'],
-                            params['uuid'])
+    taskpath = os.path.join(get_submit_dir(), str(params['remoteip']),
+                            str(params['uuid']))
     os.makedirs(taskpath, mode=0o755)
 
     # Getting network
-    if params[SNP_LEVEL_SUMMARY_PARAM] is None:
+    if SNP_LEVEL_SUMMARY_PARAM not in params or \
+        params[SNP_LEVEL_SUMMARY_PARAM] is None:
         raise Exception(SNP_LEVEL_SUMMARY_PARAM + ' is required')
 
     app.logger.debug('snp level summary: ' + str(params[SNP_LEVEL_SUMMARY_PARAM]))
@@ -150,7 +143,7 @@ def create_task(params):
     app.logger.debug(networkfile_path + ' saved and it is ' +
                      str(os.path.getsize(networkfile_path)) + ' bytes')
 
-    if params[NDEX_PARAM] is None:
+    if NDEX_PARAM not in params or params[NDEX_PARAM] is None:
         raise Exception(NDEX_PARAM + ' is required')
 
     app.logger.debug("Validating ndex id")

@@ -13,6 +13,7 @@ import re
 import io
 import uuid
 
+from werkzeug.datastructures import FileStorage
 
 import nbgwas_rest
 
@@ -50,6 +51,50 @@ class TestNbgwas_rest(unittest.TestCase):
     def test_get_done_dir(self):
         spath = os.path.join(self._temp_dir, nbgwas_rest.DONE_STATUS)
         self.assertEqual(nbgwas_rest.get_done_dir(), spath)
+
+    def test_create_task_snp_level_summary_param_not_set(self):
+
+        try:
+            # try with empty parameters
+            nbgwas_rest.create_task({'remoteip': '1.2.3.4'})
+            self.fail('Expected exception')
+        except Exception as e:
+            self.assertEqual(str(e),
+                             nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM +
+                             ' is required')
+
+    def test_create_task_ndex_param_not_set(self):
+
+        try:
+            # try with empty parameters
+            pdict = {}
+            pdict['remoteip'] = '1.2.3.4'
+            pdict[nbgwas_rest.ALPHA_PARAM] = 0.5
+            pdict['protein_coding'] = 'hg19'
+            snpfile = FileStorage(stream=io.BytesIO(b'hi there'), filename='yo.txt')
+            pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = snpfile
+            nbgwas_rest.create_task(pdict)
+            self.fail('Expected exception')
+        except Exception as e:
+            self.assertEqual(str(e),
+                             nbgwas_rest.NDEX_PARAM +
+                             ' is required')
+
+    def test_create_task_success(self):
+        pdict = {}
+        pdict['remoteip'] = '1.2.3.4'
+        pdict[nbgwas_rest.ALPHA_PARAM] = 0.5
+        pdict['protein_coding'] = 'hg19'
+        pdict[nbgwas_rest.NDEX_PARAM] = 'c3946381-745a-4f15-810c-4c880079034f'
+        snpfile = FileStorage(stream=io.BytesIO(b'hi there'), filename='yo.txt')
+        pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = snpfile
+        res = nbgwas_rest.create_task(pdict)
+        self.assertTrue(res is not None)
+
+        snp_path = os.path.join(nbgwas_rest.get_submit_dir(),
+                                pdict['remoteip'], res,
+                                nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+        self.assertTrue(os.path.isfile(snp_path))
 
     def test_get_task_basedir_none(self):
         self.assertEqual(nbgwas_rest.get_task('foo'), None)
@@ -104,6 +149,9 @@ class TestNbgwas_rest(unittest.TestCase):
     def test_post_ndex_id_too_long(self):
         pdict = {}
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
+        pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = (io.BytesIO(b'hi there'),
+                                                      'yo.txt')
+        pdict['protein_coding'] = 'hg19'
         pdict[nbgwas_rest.NDEX_PARAM] = ('asdflkasdfkljasdfalskdfja;klsd' +
                                          'lskdjfas;ldjkfasd;flasdfdfsdfs' +
                                          'sdfasdfasdfasdfasdfasdf  asdfs' +
@@ -112,6 +160,9 @@ class TestNbgwas_rest(unittest.TestCase):
         rv = self._app.post(nbgwas_rest.SNP_ANALYZER_NS, data=pdict,
                             follow_redirects=True)
         self.assertEqual(rv.status_code, 500)
+        self.assertEqual(rv.json['message'],
+                         'Unable to create task ndex parameter value is too'
+                         ' long to be an NDex UUID')
 
     def test_post_ndex(self):
         pdict = {}
