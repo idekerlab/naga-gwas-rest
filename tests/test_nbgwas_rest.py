@@ -91,74 +91,41 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(nbgwas_rest.wait_for_task('haha'), taskdir)
 
     def test_delete(self):
-        rv = self._app.delete('nbgwas/tasks/1')
+        rv = self._app.delete(nbgwas_rest.SNP_ANALYZER_NS + '/1')
         self.assertEqual(rv.status_code, 503)
-
-    def test_head(self):
-        rv = self._app.head('nbgwas/tasks/1')
-        self.assertEqual(rv.status_code, 410)
 
     def test_post_missing_required_parameter(self):
         pdict = {}
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.4,
-        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
-        rv = self._app.post('nbgwas/tasks', data=pdict,
+        rv = self._app.post(nbgwas_rest.SNP_ANALYZER_NS, data=pdict,
                             follow_redirects=True)
         self.assertEqual(rv.status_code, 500)
 
     def test_post_ndex_id_too_long(self):
         pdict = {}
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
-        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
         pdict[nbgwas_rest.NDEX_PARAM] = ('asdflkasdfkljasdfalskdfja;klsd' +
                                          'lskdjfas;ldjkfasd;flasdfdfsdfs' +
                                          'sdfasdfasdfasdfasdfasdf  asdfs' +
                                          'asdfasdfasdfasdfasdfasdfasdfas' +
                                          'asdfasdfasdfasdfasdfasdfasdfas')
-        rv = self._app.post('nbgwas/tasks', data=pdict,
+        rv = self._app.post(nbgwas_rest.SNP_ANALYZER_NS, data=pdict,
                             follow_redirects=True)
         self.assertEqual(rv.status_code, 500)
-
-    def test_post_bigim(self):
-        pdict = {}
-        pdict[nbgwas_rest.ALPHA_PARAM] = 0.4
-        pdict[nbgwas_rest.COLUMN_PARAM] = 'someid'
-        pdict[nbgwas_rest.SEEDS_PARAM] = 's1,s2'
-        rv = self._app.post('nbgwas/tasks', data=pdict,
-                            follow_redirects=True)
-
-        self.assertEqual(rv.status_code, 202)
-        res = rv.headers['Location']
-        self.assertTrue(res is not None)
-        self.assertTrue('/nbgwas/tasks/' in res)
-
-        uuidstr = re.sub('^.*/', '', res)
-        nbgwas_rest.app.config[nbgwas_rest.JOB_PATH_KEY] = self._temp_dir
-
-        tpath = nbgwas_rest.get_task(uuidstr,
-                                     basedir=nbgwas_rest.get_submit_dir())
-        self.assertTrue(os.path.isdir(tpath))
-        jsonfile = os.path.join(tpath, nbgwas_rest.TASK_JSON)
-        self.assertTrue(os.path.isfile(jsonfile))
-        with open(jsonfile, 'r') as f:
-            jdata = json.load(f)
-
-        self.assertEqual(jdata[nbgwas_rest.ALPHA_PARAM], 0.4)
-        self.assertEqual(jdata[nbgwas_rest.SEEDS_PARAM], 's1,s2')
-        self.assertEqual(jdata[nbgwas_rest.COLUMN_PARAM], 'someid')
 
     def test_post_ndex(self):
         pdict = {}
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.5
         pdict[nbgwas_rest.NDEX_PARAM] = 'someid'
-        pdict[nbgwas_rest.SEEDS_PARAM] = 'haha'
-        rv = self._app.post('nbgwas/tasks', data=pdict,
+        pdict['protein_coding'] = 'hg19'
+        pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = (io.BytesIO(b'hi there'),
+                                                      'yo.txt')
+        rv = self._app.post(nbgwas_rest.SNP_ANALYZER_NS, data=pdict,
                             follow_redirects=True)
-
         self.assertEqual(rv.status_code, 202)
         res = rv.headers['Location']
         self.assertTrue(res is not None)
-        self.assertTrue('/nbgwas/tasks/' in res)
+        self.assertTrue(nbgwas_rest.SNP_ANALYZER_NS in res)
 
         uuidstr = re.sub('^.*/', '', res)
         nbgwas_rest.app.config[nbgwas_rest.JOB_PATH_KEY] = self._temp_dir
@@ -172,52 +139,17 @@ class TestNbgwas_rest(unittest.TestCase):
             jdata = json.load(f)
 
         self.assertEqual(jdata[nbgwas_rest.ALPHA_PARAM], 0.5)
-        self.assertEqual(jdata[nbgwas_rest.SEEDS_PARAM], 'haha')
         self.assertEqual(jdata[nbgwas_rest.NDEX_PARAM], 'someid')
 
-    def test_post_network(self):
-        pdict = {}
-        pdict[nbgwas_rest.ALPHA_PARAM] = 0.5
-        pdict[nbgwas_rest.NETWORK_PARAM] = (io.BytesIO(b'hi there'), 'yo.txt')
-        pdict[nbgwas_rest.SEEDS_PARAM] = 'haha'
-
-        rv = self._app.post('nbgwas/snpanalyzer', data=pdict,
-                            follow_redirects=True)
-
-        self.assertEqual(rv.status_code, 202)
-        res = rv.headers[nbgwas_rest.LOCATION]
-        self.assertTrue(res is not None)
-        self.assertTrue('/nbgwas/tasks/' in res)
-
-        uuidstr = re.sub('^.*/', '', res)
-        nbgwas_rest.app.config[nbgwas_rest.JOB_PATH_KEY] = self._temp_dir
-
-        tpath = nbgwas_rest.get_task(uuidstr,
-                                     basedir=nbgwas_rest.get_submit_dir())
-        self.assertTrue(os.path.isdir(tpath))
-        jsonfile = os.path.join(tpath, nbgwas_rest.TASK_JSON)
-        self.assertTrue(os.path.isfile(jsonfile))
-        with open(jsonfile, 'r') as f:
-            jdata = json.load(f)
-
-        self.assertEqual(jdata[nbgwas_rest.ALPHA_PARAM], 0.5)
-        self.assertEqual(jdata[nbgwas_rest.SEEDS_PARAM], 'haha')
-        networkfile = os.path.join(tpath, nbgwas_rest.NETWORK_DATA)
-        self.assertTrue(os.path.isfile(networkfile))
-        with open(networkfile, 'r') as f:
-            ndata = f.read()
-
-        self.assertEqual(ndata, 'hi there')
-
     def test_get_id_none(self):
-        rv = self._app.get('nbgwas/tasks')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS)
         self.assertEqual(rv.status_code, 405)
 
     def test_get_id_not_found(self):
         done_dir = os.path.join(self._temp_dir,
                                 nbgwas_rest.DONE_STATUS)
         os.makedirs(done_dir, mode=0o755)
-        rv = self._app.get('nbgwas/tasks/1234')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/1234')
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.NOTFOUND_STATUS)
@@ -228,7 +160,7 @@ class TestNbgwas_rest(unittest.TestCase):
                                 nbgwas_rest.SUBMITTED_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
-        rv = self._app.get('nbgwas/tasks/qazxsw')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.SUBMITTED_STATUS)
@@ -239,7 +171,7 @@ class TestNbgwas_rest(unittest.TestCase):
                                 nbgwas_rest.PROCESSING_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
-        rv = self._app.get('nbgwas/tasks/qazxsw')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.PROCESSING_STATUS)
@@ -250,7 +182,7 @@ class TestNbgwas_rest(unittest.TestCase):
                                 nbgwas_rest.DONE_STATUS,
                                 '45.67.54.33', 'qazxsw')
         os.makedirs(task_dir, mode=0o755)
-        rv = self._app.get('nbgwas/tasks/qazxsw')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.ERROR_STATUS)
@@ -266,7 +198,7 @@ class TestNbgwas_rest(unittest.TestCase):
             f.write('{ "hello": "there"}')
             f.flush()
 
-        rv = self._app.get('nbgwas/tasks/qazxsw')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.DONE_STATUS)
@@ -287,7 +219,7 @@ class TestNbgwas_rest(unittest.TestCase):
             f.write('{"task": "yo"}')
             f.flush()
 
-        rv = self._app.get('nbgwas/tasks/qazxsw')
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.DONE_STATUS)

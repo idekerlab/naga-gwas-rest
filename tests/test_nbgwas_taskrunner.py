@@ -44,15 +44,12 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(task.get_ipaddress(), None)
         self.assertEqual(task.get_networkx_object(), None)
         self.assertEqual(task.get_alpha(), None)
-        self.assertEqual(task.get_bigim(), None)
         self.assertEqual(task.get_network(), None)
         self.assertEqual(task.get_gene_level_summary(), None)
         self.assertEqual(task.get_ndex(), None)
-        self.assertEqual(task.get_seeds(), None)
         self.assertEqual(task.get_state(), None)
         self.assertEqual(task.get_taskdict(), None)
         self.assertEqual(task.get_taskdir(), None)
-        self.assertEqual(task.get_filtered_seed_list(), None)
 
         self.assertEqual(task.get_task_summary_as_str(),
                          "{'basedir': None, 'state': None,"
@@ -63,16 +60,12 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(task.get_networkx_object(), 'hi')
         task.set_gene_level_summary('sum')
         self.assertEqual(task.get_gene_level_summary(), 'sum')
-        task.set_filtered_seed_list('seed')
-        self.assertEqual(task.get_filtered_seed_list(), 'seed')
 
         task.set_taskdir('/foo')
         self.assertEqual(task.get_taskdir(), '/foo')
 
         task.set_taskdict({})
         self.assertEqual(task.get_alpha(), None)
-        self.assertEqual(task.get_seeds(), None)
-        self.assertEqual(task.get_bigim(), None)
         self.assertEqual(task.get_ndex(), None)
         temp_dir = tempfile.mkdtemp()
         try:
@@ -85,12 +78,8 @@ class TestNbgwas_rest(unittest.TestCase):
             shutil.rmtree(temp_dir)
 
         task.set_taskdict({nbgwas_rest.ALPHA_PARAM: 0.1,
-                           nbgwas_rest.SEEDS_PARAM: 'seed1',
-                           nbgwas_rest.COLUMN_PARAM: 'column2',
                            nbgwas_rest.NDEX_PARAM: 'ndex3'})
         self.assertEqual(task.get_alpha(), 0.1)
-        self.assertEqual(task.get_seeds(), 'seed1')
-        self.assertEqual(task.get_bigim(), 'column2')
         self.assertEqual(task.get_ndex(), 'ndex3')
 
     def test_filebasedtask_get_uuid_ip_state_basedir_from_path(self):

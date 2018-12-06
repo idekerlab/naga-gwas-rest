@@ -258,21 +258,6 @@ class FileBasedTask(object):
         """
         return self._genelevelsummary
 
-    def set_filtered_seed_list(self, seedlist):
-        """
-        sets filtered seed list
-        :param seedlist:
-        :return:
-        """
-        self._filteredseedlist = seedlist
-
-    def get_filtered_seed_list(self):
-        """
-        Gets filtered seed list
-        :return:
-        """
-        return self._filteredseedlist
-
     def set_taskdir(self, taskdir):
         self._taskdir = taskdir
 
@@ -291,20 +276,6 @@ class FileBasedTask(object):
         if nbgwas_rest.ALPHA_PARAM not in self._taskdict:
             return None
         return self._taskdict[nbgwas_rest.ALPHA_PARAM]
-
-    def get_seeds(self):
-        if self._taskdict is None:
-            return None
-        if nbgwas_rest.SEEDS_PARAM not in self._taskdict:
-            return None
-        return self._taskdict[nbgwas_rest.SEEDS_PARAM]
-
-    def get_bigim(self):
-        if self._taskdict is None:
-            return None
-        if nbgwas_rest.COLUMN_PARAM not in self._taskdict:
-            return None
-        return self._taskdict[nbgwas_rest.COLUMN_PARAM]
 
     def get_ndex(self):
         if self._taskdict is None:
@@ -390,6 +361,40 @@ class FileBasedSubmittedTaskFactory(object):
 class NbgwasTaskRunner(object):
     """
     Runs tasks created by Nbgwas REST service
+
+
+    Need to update to do the following
+
+    g = Nbgwas()
+    snp_level_summary_file = 'hg18/snp_level_summary_stats_pmid_25056061.txt'
+    protein_coding_file = 'hg18/glist-hg18_proteinCoding.txt'
+
+    g.snps.from_files(
+      snp_level_summary_file,
+      protein_coding_file,
+      snp_kwargs={'sep':'\s+'},
+      pc_kwargs={'sep':'\s+', 'names':['Chrom', 'Start', 'End'], 'index_col':0}
+    )
+
+    g.genes = g.snps.assign_snps_to_genes(window_size=10000, to_Gene=True)
+
+    g.genes.convert_to_heat(method='binarize', name='Binarized Heat')
+    g.genes.convert_to_heat(method='neg_log', name='Negative Log')
+    g.network = # convert cx network from NDEx to networkx object
+    g.map_to_node_table(columns=['Binarized Heat', 'Negative Log'])
+    g.diffuse(method='random_walk', alpha=0.8, node_attribute='Binarized Heat', result_name='Diffused (Binarized)')
+    g.diffuse(method='random_walk', alpha=0.2, node_attribute='Negative Log', result_name='Diffused (Log)')
+
+    #the data frame below is the result give the name and Diffused (Log) to the user
+    g.network.node_table[[g.network.node_name, 'Diffused (Log)']]
+
+    # Example output from above
+    # 	    name	Diffused (Log)
+    # 8466	UBC	98.234079
+    # 341	APP	34.606344
+    # 1079	HNF4A	28.074621
+    # 4787	TAF1	27.823852
+    # 8206	JUN	26.689007
     """
 
     SIF_GENE_ONE = 'Gene1'

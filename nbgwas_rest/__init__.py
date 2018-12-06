@@ -16,6 +16,7 @@ from flask import Flask, request, jsonify
 from flask_restplus import reqparse, abort, Api, Resource
 
 
+
 desc = """This system is designed to use biological networks to analyze GWAS results.
 
 A GWAS association score is assigned to the genes. A molecular network is downloaded from the NDEx database, and network propagation is performed, providing a set of
@@ -54,9 +55,14 @@ DONE_STATUS = 'done'
 ERROR_STATUS = 'error'
 RESULT_KEY = 'result'
 
+SNP_ANALYZER_NS = 'snp_analyzer'
+
 api = Api(app, version=str(__version__),
           title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
           description=desc, example='put example here')
+
+ns = api.namespace(SNP_ANALYZER_NS, description='snp analyzer')
+
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 
 ALPHA_PARAM = 'alpha'
@@ -135,11 +141,12 @@ def create_task(params):
     if params[SNP_LEVEL_SUMMARY_PARAM] is None:
         raise Exception(SNP_LEVEL_SUMMARY_PARAM + ' is required')
 
-    app.logger.debug('snp level summary: ' + str(params[NETWORK_PARAM]))
-    networkfile_path = os.path.join(taskpath, NETWORK_DATA)
+    app.logger.debug('snp level summary: ' + str(params[SNP_LEVEL_SUMMARY_PARAM]))
+    networkfile_path = os.path.join(taskpath, SNP_LEVEL_SUMMARY_PARAM)
     with open(networkfile_path, 'wb') as f:
-        shutil.copyfileobj(params[NETWORK_PARAM].stream, f)
+        shutil.copyfileobj(params[SNP_LEVEL_SUMMARY_PARAM].stream, f)
         f.flush()
+    params[SNP_LEVEL_SUMMARY_PARAM] = None
     app.logger.debug(networkfile_path + ' saved and it is ' +
                      str(os.path.getsize(networkfile_path)) + ' bytes')
 
@@ -266,11 +273,13 @@ post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
                          help='Window search size in base pairs used in snp search',
                          location='form')
 
-post_parser.add_argument('protein_coding', choices=['hg18', 'hg19'], default='hg19',
+post_parser.add_argument('protein_coding', choices=['hg18', 'hg19'],
+                         default='hg19', required=True,
                          help='Sets which protein coding table to use data related'
-                              'to NCBI human genome build hg18 or hg19')
+                              'to NCBI human genome build hg18 or hg19',
+                         location='form')
 post_parser.add_argument(NDEX_PARAM, required=True,
-                         help='NDex (http://www.ndexbio.org) UUID of network '
+                         help='NDEx (http://www.ndexbio.org) UUID of network '
                               'to load. For example, to use the Parsimonious '
                               'Composite Network (PCNet), one would use this:'
                               ' f93f402c-86d4-11e7-a10d-0ac135e8bacf',
@@ -280,7 +289,7 @@ post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage, req
 
 
 @api.doc('Runs NEtwork boosted gwas')
-@api.route('/nbgwas/snpanalyzer', endpoint='nbgswas/snpanalyzer')
+@ns.route('/', strict_slashes=False)
 class TaskBasedRestApp(Resource):
     @api.doc('Runs Network Boosted GWAS',
              responses={
@@ -299,26 +308,28 @@ class TaskBasedRestApp(Resource):
         a REST endpoint that can be queried for job status.
         For more information on results see **GET /nbgwas/tasks/{id}** endpoint
         """
-        app.logger.debug("Begin!")
+        app.logger.debug("Post snpanalyzer received")
 
         try:
             params = post_parser.parse_args(request, strict=True)
             params['remoteip'] = request.remote_addr
+
             res = create_task(params)
+
             resp = flask.make_response()
-            resp.headers[LOCATION] = 'nbgwas/snpanalyzer/' + res
+            resp.headers[LOCATION] = SNP_ANALYZER_NS + '/' + res
             resp.status_code = 202
             return resp
         except OSError as e:
-            app.logger.exception('Error creating task')
+            app.logger.exception('Error creating task due to OSError' + str(e))
             abort(500, 'Unable to create task ' + str(e))
         except Exception as ea:
-            app.logger.exception('Error creating task')
+            app.logger.exception('Error creating task due to Exception ' + str(ea))
             abort(500, 'Unable to create task ' + str(ea))
 
 
-@api.route('/nbgwas/snpanalyzer/<string:id>', endpoint='nbgwas/snpanalyzer')
-class TaskGetterApp(Resource):
+@ns.route('/<string:id>', strict_slashes=False)
+class GetTask(Resource):
 
     @api.doc('Gets status and response of submitted NBGWAS snpanalyzer',
              responses={
