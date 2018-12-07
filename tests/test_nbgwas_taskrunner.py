@@ -8,12 +8,16 @@ import json
 import unittest
 import shutil
 import tempfile
+from unittest.mock import MagicMock
 
+import networkx as nx
 
 import nbgwas_rest
 from nbgwas_rest import nbgwas_taskrunner as nt
 from nbgwas_rest.nbgwas_taskrunner import FileBasedTask
 from nbgwas_rest.nbgwas_taskrunner import FileBasedSubmittedTaskFactory
+from nbgwas_rest.nbgwas_taskrunner import NetworkXFromNDExFactory
+from nbgwas_rest.nbgwas_taskrunner import NbgwasTaskRunner
 
 
 class TestNbgwas_rest(unittest.TestCase):
@@ -298,6 +302,96 @@ class TestNbgwas_rest(unittest.TestCase):
             os.makedirs(sdir, mode=0o755)
             self.assertEqual(fac.get_next_task(), None)
 
+            # submit dir with file in it
+            sdirfile = os.path.join(sdir, 'somefile')
+            open(sdirfile, 'a').close()
+            self.assertEqual(fac.get_next_task(), None)
 
+            # submit dir with 1 subdir, but that is empty too
+            ipsubdir = os.path.join(sdir, '1.2.3.4')
+            os.makedirs(ipsubdir, mode=0o755)
+            self.assertEqual(fac.get_next_task(), None)
+
+            # submit dir with 1 subdir, with a file in it for some reason
+            afile = os.path.join(ipsubdir, 'hithere')
+            open(afile, 'a').close()
+            self.assertEqual(fac.get_next_task(), None)
+
+            # empty task dir
+            taskdir = os.path.join(ipsubdir, 'sometask')
+            os.makedirs(taskdir, mode=0o755)
+            self.assertEqual(fac.get_next_task(), None)
+
+            # empty json file
+            taskjsonfile = os.path.join(taskdir, nbgwas_rest.TASK_JSON)
+            open(taskjsonfile, 'a').close()
+            self.assertEqual(fac.get_next_task(), None)
+            self.assertEqual(fac.get_size_of_problem_list(), 1)
+            plist = fac.get_problem_list()
+            self.assertEqual(plist[0], taskdir)
+
+            # try invalid json file
+
+            # try with another task this time valid
+            fac = FileBasedSubmittedTaskFactory(temp_dir, None, None)
+            anothertask = os.path.join(sdir, '4.5.6.7', 'goodtask')
+            os.makedirs(anothertask, mode=0o755)
+            goodjson = os.path.join(anothertask, nbgwas_rest.TASK_JSON)
+            with open(goodjson, 'w') as f:
+                json.dump({'hi': 'there'}, f)
+
+            res = fac.get_next_task()
+            self.assertEqual(res.get_taskdict(), {'hi': 'there'})
+            self.assertEqual(fac.get_size_of_problem_list(), 0)
+
+            # try again since we didn't move it
+            res = fac.get_next_task()
+            self.assertEqual(res.get_taskdict(), {'hi': 'there'})
+            self.assertEqual(fac.get_size_of_problem_list(), 0)
         finally:
             shutil.rmtree(temp_dir)
+
+    def test_networkxfromndexfactory(self):
+        fac = NetworkXFromNDExFactory(ndex_server=None)
+        self.assertEqual(fac.get_networkx_object(None), None)
+
+        try:
+            # try with invalid uuid on an invalid server
+            fac.get_networkx_object('hi')
+            self.fail('Expected ConnectionError')
+        except Exception as ae:
+            self.assertEqual(str(ae), 'Server and uuid not specified')
+
+    def test_nbgwastaskrunner_get_networkx_object(self):
+
+        # try with None set as task
+        runner = NbgwasTaskRunner()
+        self.assertEqual(runner._get_networkx_object(None), None)
+
+        # try with ndex id set to None
+        task = FileBasedTask(None, {})
+        runner = NbgwasTaskRunner()
+        self.assertEqual(runner._get_networkx_object(task), None)
+
+        # try with ndex id set
+        task = FileBasedTask(None, {nbgwas_rest.NDEX_PARAM: 'someid'})
+        runner = NbgwasTaskRunner()
+        self.assertEqual(runner._get_networkx_object(task), None)
+
+    def test_nbgwastaskrunner_get_networkx_object_from_ndex_valid_network(self):
+        mock_network_fac = NetworkXFromNDExFactory()
+        net_obj = nx.Graph()
+        net_obj.add_node(1, {NbgwasTaskRunner.NDEX_NAME: 'node1'})
+        net_obj.add_node(2, {NbgwasTaskRunner.NDEX_NAME: 'node2'})
+        net_obj.add_edge(1, 2)
+        mock_network_fac.get_networkx_object = MagicMock(return_value=net_obj)
+        runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+        res = runner._get_networkx_object_from_ndex('123')
+        self.assertTrue(res is not None)
+        self.assertEqual(len(res.node), 2)
+        self.assertEqual(res.node['node1']['name'], 'node1')
+        self.assertEqual(res.node['node2']['name'], 'node2')
+
+
+
+

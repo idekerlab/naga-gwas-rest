@@ -421,25 +421,44 @@ class FileBasedSubmittedTaskFactory(object):
                                 self._problemlist.append(subfp)
         return None
 
-    def clean_up_problem_list(self):
-        """
-        Iterate through problem tasks and move to done state
-        :return:
-        """
-        logger.debug('Cleaning up problem ' + str(len(self._problemlist)) +
-                     ' tasks')
-        emsg = 'Unknown error with task'
-        for entry in self._problemlist:
-            t = FileBasedTask(entry, {})
-            t.move_task(nbgwas_rest.ERROR_STATUS, error_message=emsg)
-            self._problemlist.remove(entry)
-
     def get_size_of_problem_list(self):
         """
         Gets size of problem list
         :return:
         """
         return len(self._problemlist)
+
+    def get_problem_list(self):
+        """
+        Gets problem list
+        :return:
+        """
+        return self._problemlist
+
+
+class NetworkXFromNDExFactory(object):
+    """Factory to get networkx object from NDEx server
+    """
+    def __init__(self, ndex_server=None, username=None,
+                 password=None):
+        """Constructor"""
+        self._ndex_server = ndex_server
+        self._username = username
+        self._password = password
+
+    def get_networkx_object(self, ndex_uuid):
+        """
+        Given a NDEx uuid, this method returns
+        the network as a networkx object
+        :param ndex_uuid: NDEx uuid to get
+        :return: networkx object upon success or None if unable to load
+        """
+        if ndex_uuid is None:
+            logger.error('UUID passed in is None')
+            return None
+        cxnet = create_nice_cx_from_server(server=self._ndex_server,
+                                           uuid=ndex_uuid)
+        return cxnet.to_networkx()
 
 
 class NbgwasTaskRunner(object):
@@ -485,15 +504,19 @@ class NbgwasTaskRunner(object):
 
     NEGATIVE_LOG = 'Negative Log'
     BINARIZED_HEAT = 'Binarized Heat'
+    BINARIZE_HEAT_METHOD = 'binarize'
+    NEG_LOG_HEAT_METHOD = 'neg_log'
     DIFFUSED_LOG = 'Diffused (Log)'
+    DIFFUSED_BINARIZED = 'Diffused (Binarized)'
+    DIFFUSE_METHOD = 'random_walk'
 
     def __init__(self, wait_time=30,
                  taskfactory=None,
-                 ndex_server=None,
+                 networkfactory=None,
                  ):
         self._taskfactory = taskfactory
         self._wait_time = wait_time
-        self._ndex_server = ndex_server
+        self._networkfactory = networkfactory
 
     def _get_networkx_object(self, task):
         """
@@ -514,13 +537,27 @@ class NbgwasTaskRunner(object):
 
     def _get_networkx_object_from_ndex(self, ndex_id):
         """
-        Extracts networkx object from ndex
+        Extracts networkx object from ndex and relabels the nodes
+        by the name of the node set as NDEX_NAME attribute.
+        For example if original NDEx network looked like this if str(network.node):
+
+        {1: {'name': 'node1'}, 2: {'name': 'node2'}}
+
+        The returned network will look like this if str(network.node):
+
+        {'node1': {'name': 'node1'}, 'node2': {'name': 'node2'}}
+
         :param task: contains id to get
         :return:
         """
-        cxnet = create_nice_cx_from_server(server=self._ndex_server,
-                                           uuid=ndex_id)
-        dG = cxnet.to_networkx()
+        if self._networkfactory is None:
+            logger.error('Network factory is None')
+            return None
+
+        dG = self._networkfactory.get_networkx_object(ndex_id)
+        if dG is None:
+            return None
+
         name_map = {i: j[NbgwasTaskRunner.NDEX_NAME]
                     for i, j in dG.node.items()}
         return nx.relabel_nodes(dG, name_map)
@@ -543,13 +580,16 @@ class NbgwasTaskRunner(object):
             return
         task.set_networkx_object(n_obj)
 
-        result = self._run_nbgwas(task)
+        result, emsg = self._run_nbgwas(task)
+
         if result is None:
-            emsg = 'No result generated'
-            logger.error(emsg)
+            if emsg is None:
+                emsg = 'No result generated'
+            logger.error('Task failed ' + emsg)
             task.move_task(nbgwas_rest.ERROR_STATUS,
                            error_message=emsg)
             return
+
         logger.info('Task processing completed')
         task.set_result_data(result)
         task.save_task()
@@ -559,8 +599,10 @@ class NbgwasTaskRunner(object):
     def _run_nbgwas(self, task):
         """
         Runs nbgwas processing
-        :param task:
-        :return:
+        :param task: The task to process
+        :return: tuple if successful result will be ({}, None) otherwise
+                 (None, 'str containing error message') or (None, None)
+
         """
         g = Nbgwas()
         # snp_level_summary_file = 'hg18/snp_level_summary_stats_pmid_25056061.txt'
@@ -577,17 +619,26 @@ class NbgwasTaskRunner(object):
         g.genes = g.snps.assign_snps_to_genes(window_size=task.get_window(),
                                               to_Gene=True)
 
-        g.genes.convert_to_heat(method='binarize',
+        g.genes.convert_to_heat(method=NbgwasTaskRunner.BINARIZE_HEAT_METHOD,
                                 name=NbgwasTaskRunner.BINARIZED_HEAT)
-        g.genes.convert_to_heat(method='neg_log',
+        g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
-        g.network =  task.get_networkx_object()
+
+        net_obj = task.get_networkx_object()
+
+        if net_obj is None:
+            return None, 'Unable to get network from NDEx'
+
+        g.network = net_obj
+
         g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
                                      NbgwasTaskRunner.NEGATIVE_LOG])
-        g.diffuse(method='random_walk', alpha=task.get_alpha(),
+        g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
+                  alpha=task.get_alpha(),
                   node_attribute=NbgwasTaskRunner.BINARIZED_HEAT,
-                  result_name='Diffused (Binarized)')
-        g.diffuse(method='random_walk', alpha=task.get_alpha(),
+                  result_name=NbgwasTaskRunner.DIFFUSED_BINARIZED)
+        g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
+                  alpha=task.get_alpha(),
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
@@ -597,7 +648,7 @@ class NbgwasTaskRunner(object):
                                      NbgwasTaskRunner.DIFFUSED_LOG]]
         # dframe.to_pickle(os.path.join(task.get_taskdir(), 'mypickle'))
         result = {gene:score for gene,score in dframe.values}
-        return result
+        return result, None
 
     def run_tasks(self):
         """
@@ -605,21 +656,12 @@ class NbgwasTaskRunner(object):
         tasks to run.
         :return:
         """
-        cleanupcounter = 0
         while True:
             task = self._taskfactory.get_next_task()
             if task is None:
-                if self._taskfactory.get_size_of_problem_list() > 0:
-                    cleanupcounter = cleanupcounter + 1
-                    if cleanupcounter >= 3:
-                        self._taskfactory.clean_up_problem_list()
-                        cleanupcounter = 0
-                    else:
-                        time.sleep(self._wait_time)
-                else:
-                    time.sleep(self._wait_time)
-
+                time.sleep(self._wait_time)
                 continue
+
             logger.debug('Found a task: ' + str(task.get_taskdir()))
             try:
                 self._process_task(task)
@@ -648,8 +690,9 @@ def main(args):
         tfac = FileBasedSubmittedTaskFactory(ab_tdir,
                                              ab_pdir,
                                              theargs.protein_coding_suffix)
+        netfac = NetworkXFromNDExFactory(ndex_server=theargs.ndexserver)
         runner = NbgwasTaskRunner(taskfactory=tfac,
-                                  ndex_server=theargs.ndexserver,
+                                  netfac=netfac,
                                   wait_time=theargs.wait_time)
 
         runner.run_tasks()
