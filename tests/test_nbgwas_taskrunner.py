@@ -48,10 +48,14 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(task.get_ipaddress(), None)
         self.assertEqual(task.get_networkx_object(), None)
         self.assertEqual(task.get_alpha(), None)
+        self.assertEqual(task.get_protein_coding(), None)
+        self.assertEqual(task.get_window(), None)
         self.assertEqual(task.get_ndex(), None)
         self.assertEqual(task.get_state(), None)
         self.assertEqual(task.get_taskdict(), None)
         self.assertEqual(task.get_taskdir(), None)
+        self.assertEqual(task.get_snp_level_summary_file(), None)
+        self.assertEqual(task.get_protein_coding_file(), None)
 
         self.assertEqual(task.get_task_summary_as_str(),
                          "{'basedir': None, 'state': None,"
@@ -67,6 +71,8 @@ class TestNbgwas_rest(unittest.TestCase):
         task.set_taskdict({})
         self.assertEqual(task.get_alpha(), None)
         self.assertEqual(task.get_ndex(), None)
+        self.assertEqual(task.get_protein_coding(), None)
+        self.assertEqual(task.get_window(), None)
         temp_dir = tempfile.mkdtemp()
         try:
             task.set_taskdir(temp_dir)
@@ -78,9 +84,58 @@ class TestNbgwas_rest(unittest.TestCase):
             shutil.rmtree(temp_dir)
 
         task.set_taskdict({nbgwas_rest.ALPHA_PARAM: 0.1,
-                           nbgwas_rest.NDEX_PARAM: 'ndex3'})
+                           nbgwas_rest.NDEX_PARAM: 'ndex3',
+                           nbgwas_rest.PROTEIN_CODING_PARAM: 'yo',
+                           nbgwas_rest.WINDOW_PARAM: 10})
         self.assertEqual(task.get_alpha(), 0.1)
         self.assertEqual(task.get_ndex(), 'ndex3')
+        self.assertEqual(task.get_protein_coding(), 'yo')
+        self.assertEqual(task.get_window(), 10)
+
+    def test_filebasedtask_get_protein_coding_file_no_protein_coding_dir(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            tdict = {nbgwas_rest.PROTEIN_CODING_PARAM: 'yo'}
+            task = FileBasedTask(temp_dir, tdict)
+            self.assertEqual(task.get_protein_coding_file(), None)
+            pc_file = os.path.join(temp_dir,nbgwas_rest.PROTEIN_CODING_PARAM)
+            open(pc_file, 'a').close()
+            self.assertEqual(task.get_protein_coding_file(), pc_file)
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_filebasedtask_get_protein_coding_file_with_protein_coding(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            pcdir = os.path.join(temp_dir, 'pcdir')
+            os.makedirs(pcdir, mode=0o755)
+            task = FileBasedTask(temp_dir, None, protein_coding_dir=pcdir)
+
+            # try with no protein coding param
+            self.assertEqual(task.get_protein_coding_file(), None)
+
+            # try with protein coding param set but no file
+            tdict = {nbgwas_rest.PROTEIN_CODING_PARAM: 'yo'}
+            task.set_taskdict(tdict)
+            self.assertEqual(task.get_protein_coding_file(), None)
+
+            # now add file no suffix to directory and try
+            pc_file = os.path.join(pcdir, 'yo')
+            open(pc_file, 'a').close()
+            self.assertEqual(task.get_protein_coding_file(), pc_file)
+
+            task = FileBasedTask(temp_dir, tdict, protein_coding_dir=pcdir,
+                                 protein_coding_suffix='.txt')
+
+            # test suffix adding logic
+            self.assertEqual(task.get_protein_coding_file(), None)
+
+            pc_file_txt = pc_file + '.txt'
+            open(pc_file_txt, 'a').close()
+            self.assertEqual(task.get_protein_coding_file(), pc_file_txt)
+        finally:
+            shutil.rmtree(temp_dir)
+
 
     def test_filebasedtask_get_uuid_ip_state_basedir_from_path(self):
         # taskdir is none
