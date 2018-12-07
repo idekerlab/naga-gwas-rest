@@ -28,13 +28,17 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_parse_arguments(self):
         """Test something."""
-        res = nt._parse_arguments('hi', ['foo'])
+        res = nt._parse_arguments('hi', ['--protein_coding_dir',
+                                         'pcd', 'foo'])
         self.assertEqual(res.taskdir, 'foo')
+        self.assertEqual(res.protein_coding_dir, 'pcd')
+
         self.assertEqual(res.wait_time, 30)
         self.assertEqual(res.verbose, 1)
 
     def test_setuplogging(self):
-        res = nt._parse_arguments('hi', ['foo'])
+        res = nt._parse_arguments('hi', ['--protein_coding_dir',
+                                         'pcd', 'foo'])
         nt._setuplogging(res)
 
     def test_filebasedtask_getter_setter_on_basic_obj(self):
@@ -44,8 +48,6 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(task.get_ipaddress(), None)
         self.assertEqual(task.get_networkx_object(), None)
         self.assertEqual(task.get_alpha(), None)
-        self.assertEqual(task.get_network(), None)
-        self.assertEqual(task.get_gene_level_summary(), None)
         self.assertEqual(task.get_ndex(), None)
         self.assertEqual(task.get_state(), None)
         self.assertEqual(task.get_taskdict(), None)
@@ -58,8 +60,6 @@ class TestNbgwas_rest(unittest.TestCase):
         task.set_result_data('result')
         task.set_networkx_object('hi')
         self.assertEqual(task.get_networkx_object(), 'hi')
-        task.set_gene_level_summary('sum')
-        self.assertEqual(task.get_gene_level_summary(), 'sum')
 
         task.set_taskdir('/foo')
         self.assertEqual(task.get_taskdir(), '/foo')
@@ -70,10 +70,10 @@ class TestNbgwas_rest(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             task.set_taskdir(temp_dir)
-            self.assertEqual(task.get_network(), None)
-            thefile = os.path.join(temp_dir, nbgwas_rest.NETWORK_DATA)
+            self.assertEqual(task.get_snp_level_summary_file(), None)
+            thefile = os.path.join(temp_dir, nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
             open(thefile, 'a').close()
-            self.assertEqual(task.get_network(), thefile)
+            self.assertEqual(task.get_snp_level_summary_file(), thefile)
         finally:
             shutil.rmtree(temp_dir)
 
