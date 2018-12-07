@@ -60,6 +60,9 @@ api = Api(app, version=str(__version__),
           title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
           description=desc, example='put example here')
 
+# need to clear out the default namespace
+api.namespaces.clear()
+
 ns = api.namespace(SNP_ANALYZER_NS, description='snp analyzer')
 
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
@@ -72,6 +75,7 @@ UUID_PARAM = 'uuid'
 ERROR_PARAM = 'error'
 WINDOW_PARAM = 'window'
 SNP_LEVEL_SUMMARY_PARAM = 'snp_level_summary'
+PROTEIN_CODING_PARAM = 'protein_coding'
 
 SNP_ANALYZER_TASK = 'snpanalyzer'
 
@@ -139,7 +143,7 @@ def create_task(params):
     with open(networkfile_path, 'wb') as f:
         shutil.copyfileobj(params[SNP_LEVEL_SUMMARY_PARAM].stream, f)
         f.flush()
-    params[SNP_LEVEL_SUMMARY_PARAM] = None
+    params[SNP_LEVEL_SUMMARY_PARAM] = SNP_LEVEL_SUMMARY_PARAM
     app.logger.debug(networkfile_path + ' saved and it is ' +
                      str(os.path.getsize(networkfile_path)) + ' bytes')
 
@@ -252,24 +256,10 @@ def wait_for_task(uuidstr, hintlist=None):
 
 
 post_parser = reqparse.RequestParser()
-post_parser.add_argument(ALPHA_PARAM, type=float,
-                         help='Sets propagation constant alpha with allowed '
-                              'values between 0 and 1, representing the '
-                              'probability of walking to network neighbors '
-                              'as opposed to reseting to the original '
-                              'distribution. Larger values induce more '
-                              'spread on the network. If unset, then optimal'
-                              ' parameter is selected by linear model derived'
-                              ' from (huang, cell systems 2018)',
-                         location='form')
-post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
-                         help='Window search size in base pairs used in snp search',
-                         location='form')
-
-post_parser.add_argument('protein_coding', choices=['hg18', 'hg19'],
+post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19'],
                          default='hg19', required=True,
-                         help='Sets which protein coding table to use data related'
-                              'to NCBI human genome build hg18 or hg19',
+                         help='Sets which protein coding table to use. '
+                              ' Values correspond to NCBI Human Genome Builds',
                          location='form')
 post_parser.add_argument(NDEX_PARAM, required=True,
                          help='NDEx (http://www.ndexbio.org) UUID of network '
@@ -279,6 +269,20 @@ post_parser.add_argument(NDEX_PARAM, required=True,
                          location='form')
 post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage, required=True,
                          help='Comma delimited file with format of chromosome,basepair,p_value', location='files')
+post_parser.add_argument(ALPHA_PARAM, type=float,
+                         help='Sets propagation constant alpha with allowed '
+                              'values between 0 and 1, representing the '
+                              'probability of walking to network neighbors '
+                              'as opposed to reseting to the original '
+                              'distribution. Larger values induce more '
+                              'spread on the network. If unset, then optimal'
+                              ' parameter is selected by linear model derived'
+                              ' from (huang, cell systems 2018 '
+                              'https://doi.org/10.1016/j.cels.2018.03.001)',
+                         location='form')
+post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
+                         help='Window search size in base pairs used in snp search',
+                         location='form')
 
 
 @api.doc('Runs NEtwork boosted gwas')
@@ -286,7 +290,8 @@ post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage, req
 class TaskBasedRestApp(Resource):
     @api.doc('Runs Network Boosted GWAS',
              responses={
-                 202: 'Success',
+                 202: 'The task was successfully submitted to the service. Visit the URL'
+                      ' specified in **Location** field in HEADERS to status and results',
                  500: 'Internal server error'
              })
     @api.header(LOCATION, 'URL endpoint to poll for result of task for '
@@ -294,12 +299,8 @@ class TaskBasedRestApp(Resource):
     @api.expect(post_parser)
     def post(self):
         """
-        Runs Network Boosted GWAS asynchronously
+        Submits NAGA task for processing
 
-        This endpoint will return a status code of **202** for successful
-        submissions and set the **Location** field in the **HEADERS** to
-        a REST endpoint that can be queried for job status.
-        For more information on results see **GET /nbgwas/tasks/{id}** endpoint
         """
         app.logger.debug("Post snpanalyzer received")
 
@@ -410,4 +411,29 @@ class GetTask(Resource):
         resp = flask.make_response()
         resp.data = 'Currently not implemented'
         resp.status_code = 503
+        return resp
+
+
+@ns.route('/status', strict_slashes=False, doc=False)
+class SystemStatus(Resource):
+
+    OK_STATUS = 'ok'
+    @api.doc('Gets status',
+             responses={
+                 200: 'Success',
+                 500: 'Internal server error'
+             })
+    def get(self):
+        """
+        Gets status of service
+
+        ```Bash
+        {
+          "status" : "ok|error"
+        }
+        ```
+        """
+
+        resp = jsonify({STATUS_RESULT_KEY: SystemStatus.OK_STATUS})
+        resp.status_code = 200
         return resp
