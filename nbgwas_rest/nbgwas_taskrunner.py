@@ -517,7 +517,7 @@ class NbgwasTaskRunner(object):
         g.snps.from_files(
             task.get_snp_level_summary_file(),
             task.get_protein_coding_file(),
-            snp_kwargs={'sep': '\s+'},
+            snp_kwargs={'sep': '\s+|\s*,\s*'},
             pc_kwargs={'sep': '\s+', 'names': ['Chrom', 'Start', 'End'],
                        'index_col': 0}
         )
