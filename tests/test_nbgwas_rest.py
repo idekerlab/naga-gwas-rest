@@ -279,3 +279,10 @@ class TestNbgwas_rest(unittest.TestCase):
 
     def test_log_task_json_file_with_none(self):
         self.assertEqual(nbgwas_rest.log_task_json_file(None), None)
+
+    def test_get_status(self):
+        rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/status')
+        data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
+                         nbgwas_rest.SystemStatus.OK_STATUS)
+        self.assertEqual(rv.status_code, 200)
