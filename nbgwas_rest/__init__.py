@@ -267,8 +267,16 @@ post_parser.add_argument(NDEX_PARAM, required=True,
                               'Composite Network (PCNet), one would use this:'
                               ' f93f402c-86d4-11e7-a10d-0ac135e8bacf',
                          location='form')
-post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage, required=True,
-                         help='Comma delimited file with format of chromosome,basepair,p_value', location='files')
+post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage,
+                         required=True,
+                         help='Comma or tab delimited file with format of'
+                              ' chromosome,basepair,p_value. To dictate '
+                              'columns from the file, please directly '
+                              'install the nbgwas library directly. See '
+                              ' https://github.com/shfong/nbgwas for '
+                              'more information. **NOTE:** This'
+                              ' code assumes the first line of the file is'
+                              ' the header', location='files')
 post_parser.add_argument(ALPHA_PARAM, type=float,
                          help='Sets propagation constant alpha with allowed '
                               'values between 0 and 1, representing the '
@@ -345,13 +353,19 @@ class GetTask(Resource):
 
         For incomplete/failed jobs
 
+        &nbsp;&nbsp;
+
         ```Bash
         {
           "status" : "notfound|submitted|processing|error"
         }
         ```
 
+        &nbsp;&nbsp;
+
         For complete jobs an additional field result is included:
+
+        &nbsp;&nbsp;
 
         ```Bash
         {
