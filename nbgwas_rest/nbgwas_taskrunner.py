@@ -8,8 +8,6 @@ import logging
 import time
 import shutil
 import json
-import requests
-from requests import HTTPError
 
 from nbgwas import Nbgwas
 
@@ -32,24 +30,17 @@ def _parse_arguments(desc, args):
                                      formatter_class=help_formatter)
     parser.add_argument('taskdir', help='Base directory where tasks'
                                         'are located')
+    parser.add_argument('--protein_coding_dir', required=True,
+                        help='Directory where protein_coding data files reside')
+    parser.add_argument('--protein_coding_suffix', default='.txt',
+                        help='Suffix of protein_coding files in '
+                             '--protein_coding_dir directory. (default .txt)')
     parser.add_argument('--wait_time', type=int, default=30,
                         help='Time in seconds to wait'
                              'before looking for new'
                              'tasks')
     parser.add_argument('--ndexserver', default='public.ndexbio.org',
-                        help='NDex server default is public.ndexbio.org')
-    parser.add_argument('--biggimserver',
-                        default='http://biggim.ncats.io/api',
-                        help='biggim REST service endpoint default is'
-                             'http://biggim.ncats.io/api')
-    parser.add_argument('--biggim_wait_time', default=1,
-                        help='Time in seconds to wait before checking'
-                             'status of biggim request (default 1)')
-    parser.add_argument('--biggim_wait_count', default=300,
-                        help='Number of times to check status of biggim'
-                             'request. Total wait time can be calculated'
-                             'by multiping this value (default 300) by '
-                             '--biggim_wait_time')
+                        help='NDEx server default is public.ndexbio.org')
     parser.add_argument('--version', action='version',
                         version=('%(prog)s ' + nbgwas_rest.__version__))
     parser.add_argument('--verbose', '-v', action='count',
@@ -85,13 +76,16 @@ class FileBasedTask(object):
     IPADDR = 'ipaddr'
     UUID = 'uuid'
 
-    def __init__(self, taskdir, taskdict):
+    def __init__(self, taskdir, taskdict,
+                 protein_coding_dir=None,
+                 protein_coding_suffix=None):
         self._taskdir = taskdir
         self._taskdict = taskdict
         self._networkx_obj = None
-        self._genelevelsummary = None
-        self._filteredseedlist = None
+        self._snplevelsummary = None
         self._resultdata = None
+        self._protein_coding_dir = protein_coding_dir
+        self._protein_coding_suffix = protein_coding_suffix
 
     def save_task(self):
         """
@@ -243,21 +237,6 @@ class FileBasedTask(object):
         """
         return self._networkx_obj
 
-    def set_gene_level_summary(self, gls):
-        """
-        Sets gene list summary obj
-        :param gls:
-        :return:
-        """
-        self._genelevelsummary = gls
-
-    def get_gene_level_summary(self):
-        """
-        Gets gene list summary
-        :return:
-        """
-        return self._genelevelsummary
-
     def set_taskdir(self, taskdir):
         self._taskdir = taskdir
 
@@ -277,6 +256,20 @@ class FileBasedTask(object):
             return None
         return self._taskdict[nbgwas_rest.ALPHA_PARAM]
 
+    def get_protein_coding(self):
+        if self._taskdict is None:
+            return None
+        if nbgwas_rest.PROTEIN_CODING_PARAM not in self._taskdict:
+            return None
+        return self._taskdict[nbgwas_rest.PROTEIN_CODING_PARAM]
+
+    def get_window(self):
+        if self._taskdict is None:
+            return None
+        if nbgwas_rest.WINDOW_PARAM not in self._taskdict:
+            return None
+        return self._taskdict[nbgwas_rest.WINDOW_PARAM]
+
     def get_ndex(self):
         if self._taskdict is None:
             return None
@@ -284,24 +277,61 @@ class FileBasedTask(object):
             return None
         return self._taskdict[nbgwas_rest.NDEX_PARAM]
 
-    def get_network(self):
+    def get_snp_level_summary_file(self):
         if self._taskdir is None:
             return None
-        network_dfile = os.path.join(self._taskdir,
-                                     nbgwas_rest.NETWORK_DATA)
-        if not os.path.isfile(network_dfile):
+        snp_file = os.path.join(self._taskdir,
+                                     nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+        if not os.path.isfile(snp_file):
             return None
-        return network_dfile
+        return snp_file
+
+    def get_protein_coding_file(self):
+        """Look in task directory for protein coding file
+        otherwise look in protein_coding_dir set in constructor
+        """
+        if self._taskdir is None:
+            return None
+
+        pc_file = os.path.join(self._taskdir,
+                               nbgwas_rest.PROTEIN_CODING_PARAM)
+
+        logger.debug('Looking for protein coding file in task: ' + pc_file)
+
+        if os.path.isfile(pc_file):
+            return pc_file
+
+        if self._protein_coding_dir is None:
+            return None
+
+        p_code = self.get_protein_coding()
+
+        if p_code is None:
+            return None
+
+        pc_file = os.path.join(self._protein_coding_dir, p_code)
+        if self._protein_coding_suffix is not None:
+            pc_file = pc_file + str(self._protein_coding_suffix)
+
+        logger.debug('Looking for protein coding file: ' + pc_file)
+
+        if os.path.isfile(pc_file):
+            return pc_file
+
+        return None
 
 
 class FileBasedSubmittedTaskFactory(object):
     """
     Reads file system to get tasks
     """
-    def __init__(self, taskdir):
+    def __init__(self, taskdir, protein_coding_dir,
+                 protein_coding_suffix):
         self._taskdir = taskdir
         self._submitdir = os.path.join(self._taskdir,
                                        nbgwas_rest.SUBMITTED_STATUS)
+        self._protein_coding_dir = protein_coding_dir
+        self._protein_coding_suffix = protein_coding_suffix
         self._problemlist = []
 
     def get_next_task(self):
@@ -328,7 +358,9 @@ class FileBasedSubmittedTaskFactory(object):
                         try:
                             with open(tjson, 'r') as f:
                                 jsondata = json.load(f)
-                            return FileBasedTask(subfp, jsondata)
+                            return FileBasedTask(subfp, jsondata,
+                                                 protein_coding_dir=self._protein_coding_dir,
+                                                 protein_coding_suffix=self._protein_coding_suffix)
                         except Exception as e:
                             if subfp not in self._problemlist:
                                 logger.info('Skipping task: ' + subfp +
@@ -397,25 +429,19 @@ class NbgwasTaskRunner(object):
     # 8206	JUN	26.689007
     """
 
-    SIF_GENE_ONE = 'Gene1'
-    SIF_GENE_TWO = 'Gene2'
-    SIF_VAL = 'Val'
-    SIF_NAMES = [SIF_GENE_ONE, SIF_GENE_TWO, SIF_VAL]
     NDEX_NAME = 'name'
+
+    NEGATIVE_LOG = 'Negative Log'
+    BINARIZED_HEAT = 'Binarized Heat'
+    DIFFUSED_LOG = 'Diffused (Log)'
 
     def __init__(self, wait_time=30,
                  taskfactory=None,
                  ndex_server=None,
-                 biggim_server=None,
-                 biggim_wait_time=1,
-                 biggim_wait_count=300,
                  ):
         self._taskfactory = taskfactory
         self._wait_time = wait_time
         self._ndex_server = ndex_server
-        self._biggim_server = biggim_server
-        self._biggim_wait_time = biggim_wait_time
-        self._biggim_wait_count = biggim_wait_count
 
     def _get_networkx_object(self, task):
         """
@@ -428,87 +454,11 @@ class NbgwasTaskRunner(object):
             logger.error('task is None')
             return None
 
-        sif_file = task.get_network()
-        if sif_file is not None:
-            return self._get_networkx_object_from_sif_file(sif_file)
-
         ndex_id = task.get_ndex()
         if ndex_id is not None:
             return self._get_networkx_object_from_ndex(ndex_id)
 
-        bigimval = task.get_bigim()
-        if bigimval is not None:
-            return self._get_networkx_object_from_biggim(bigimval)
-
-        logger.error('Task ' + task.get_task_summary_as_str() +
-                     'did not have one of the 3 required' +
-                     'parameters')
         return None
-
-    def _biggim_get_request(self, endpoint, data={}):
-        """
-        Runs get request to biggim server
-        :param endpoint:
-        :param data:
-        :raises HTTPError: if there was a problem with request
-        :return: result in json format
-        """
-        req = requests.get(self._biggim_server + '/' +
-                           endpoint, data=data)
-        req.raise_for_status()
-        return req.json()
-
-    def _get_networkx_object_from_biggim(self, data_name,
-                                         threshold=0.8):
-        """
-        Create networkx object appropriate for nbgwas
-        from biggim service
-        :return: networkx object upon success or None for failure
-        """
-        try:
-            tables = self._biggim_get_request('/metadata/table')
-            default_table = [t for t in tables if t['default'] is
-                             True][0]['name']
-            query = {
-                "restriction_gt": f"{data_name},{threshold}",
-                "table": default_table,
-                "columns": "GTEx_Pancreas_Correlation",
-                "limit": 400000000
-            }
-            query_submit = self._biggim_get_request('biggim/query',
-                                                    data=query)
-
-            counter = 0
-            while counter <= self._biggim_wait_count:
-                qstatus = self._biggim_get_request('biggim/status/' +
-                                                   query_submit['request_id'])
-                if qstatus['status'] != 'running':
-                    return pd.concat(map(pd.read_csv, qstatus['request_uri']))
-                time.sleep(self._biggim_wait_time)
-                counter = counter + 1
-            logger.error('Wait time exceeded')
-            return None
-
-        except HTTPError:
-            logger.exception('Caught exception hitting biggim service')
-            return None
-
-    def _get_networkx_object_from_sif_file(self, sif_file):
-        """
-        Create networkx object appropriate for nbgwas
-        from sif file stored in task directory
-        :param sif_file: Path to sif file
-        :return: networkx object upon success or None for failure
-        """
-        if not os.path.isfile(sif_file):
-            return None
-        with open(sif_file, 'r') as f:
-            network_df = pd.read_csv(f, sep='\t',
-                                     names=NbgwasTaskRunner.SIF_NAMES)
-
-        return nx.from_pandas_dataframe(network_df,
-                                        NbgwasTaskRunner.SIF_GENE_ONE,
-                                        NbgwasTaskRunner.SIF_GENE_TWO)
 
     def _get_networkx_object_from_ndex(self, ndex_id):
         """
@@ -522,40 +472,6 @@ class NbgwasTaskRunner(object):
         name_map = {i: j[NbgwasTaskRunner.NDEX_NAME]
                     for i, j in dG.node.items()}
         return nx.relabel_nodes(dG, name_map)
-
-    def _get_seeds(self, task):
-        """
-        Parse seeds and verify they exist in network
-        :param seedstr:
-        :param networkx_obj:
-        :return:
-        """
-        if task.get_seeds() is None:
-            return None
-        slist = task.get_seeds().split(',')
-        for s in slist:
-            if s not in task.get_networkx_object().nodes():
-                slist.remove(s)
-                logger.info(s + ' seed not in nodes')
-        if len(slist) is 0:
-            logger.error('No seeds left after checking them against'
-                         'network')
-            return None
-        return slist
-
-    def _create_gene_level_summary(self, task):
-        """
-
-        :param genes:
-        :param seeds:
-        :return:
-        """
-        gls = pd.DataFrame([task.get_networkx_object().nodes()],
-                           index=['Genes']).T
-        gls['p-value'] = 1
-        gls.loc[gls['Genes'].isin(task.get_filtered_seed_list()),
-                'p-value'] = 0
-        return gls
 
     def _process_task(self, task):
         """
@@ -574,24 +490,6 @@ class NbgwasTaskRunner(object):
                            error_message=emsg)
             return
         task.set_networkx_object(n_obj)
-
-        seed_list = self._get_seeds(task)
-        if seed_list is None or len(seed_list) is 0:
-            emsg = 'No seeds are in network'
-            logger.error(emsg)
-            task.move_task(nbgwas_rest.ERROR_STATUS,
-                           error_message=emsg)
-            return
-        task.set_filtered_seed_list(seed_list)
-
-        gls = self._create_gene_level_summary(task)
-        if gls is None:
-            emsg = 'Unable to create gene level summary'
-            logger.error(emsg)
-            task.move_task(nbgwas_rest.ERROR_STATUS,
-                           error_message=emsg)
-            return
-        task.set_gene_level_summary(gls)
 
         result = self._run_nbgwas(task)
         if result is None:
@@ -612,16 +510,42 @@ class NbgwasTaskRunner(object):
         :param task:
         :return:
         """
-        g = Nbgwas(
-            gene_level_summary=task.get_gene_level_summary(),
-            gene_col='Genes',
-            gene_pval_col='p-value',
-            network=task.get_networkx_object(),
+        g = Nbgwas()
+        # snp_level_summary_file = 'hg18/snp_level_summary_stats_pmid_25056061.txt'
+        # protein_coding_file = 'hg18/glist-hg18_proteinCoding.txt'
+
+        g.snps.from_files(
+            task.get_snp_level_summary_file(),
+            task.get_protein_coding_file(),
+            snp_kwargs={'sep': '\s+'},
+            pc_kwargs={'sep': '\s+', 'names': ['Chrom', 'Start', 'End'],
+                       'index_col': 0}
         )
 
-        g.convert_to_heat()
-        g.diffuse(method='random_walk', alpha=task.get_alpha())
-        return json.loads(g.heat.iloc[:, -1].to_json())
+        g.genes = g.snps.assign_snps_to_genes(window_size=task.get_window(),
+                                              to_Gene=True)
+
+        g.genes.convert_to_heat(method='binarize',
+                                name=NbgwasTaskRunner.BINARIZED_HEAT)
+        g.genes.convert_to_heat(method='neg_log',
+                                name=NbgwasTaskRunner.NEGATIVE_LOG)
+        g.network =  task.get_networkx_object()
+        g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
+                                     NbgwasTaskRunner.NEGATIVE_LOG])
+        g.diffuse(method='random_walk', alpha=task.get_alpha(),
+                  node_attribute=NbgwasTaskRunner.BINARIZED_HEAT,
+                  result_name='Diffused (Binarized)')
+        g.diffuse(method='random_walk', alpha=task.get_alpha(),
+                  node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
+                  result_name=NbgwasTaskRunner.DIFFUSED_LOG)
+
+        # the data frame below is the result give the name and
+        # Diffused (Log) to the user
+        dframe = g.network.node_table[[g.network.node_name,
+                                     NbgwasTaskRunner.DIFFUSED_LOG]]
+        # dframe.to_pickle(os.path.join(task.get_taskdir(), 'mypickle'))
+        result = {gene:score for gene,score in dframe.values}
+        return result
 
     def run_tasks(self):
         """
@@ -666,14 +590,14 @@ def main(args):
     _setuplogging(theargs)
     try:
         ab_tdir = os.path.abspath(theargs.taskdir)
+        ab_pdir = os.path.abspath(theargs.protein_coding_dir)
         logger.debug('Task directory set to: ' + ab_tdir)
 
-        tfac = FileBasedSubmittedTaskFactory(ab_tdir)
+        tfac = FileBasedSubmittedTaskFactory(ab_tdir,
+                                             ab_pdir,
+                                             theargs.protein_coding_suffix)
         runner = NbgwasTaskRunner(taskfactory=tfac,
                                   ndex_server=theargs.ndexserver,
-                                  biggim_server=theargs.biggimserver,
-                                  biggim_wait_time=theargs.biggim_wait_time,
-                                  biggim_wait_count=theargs.biggim_wait_count,
                                   wait_time=theargs.wait_time)
 
         runner.run_tasks()
