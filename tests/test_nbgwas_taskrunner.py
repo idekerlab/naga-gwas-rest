@@ -13,6 +13,7 @@ import tempfile
 import nbgwas_rest
 from nbgwas_rest import nbgwas_taskrunner as nt
 from nbgwas_rest.nbgwas_taskrunner import FileBasedTask
+from nbgwas_rest.nbgwas_taskrunner import FileBasedSubmittedTaskFactory
 
 
 class TestNbgwas_rest(unittest.TestCase):
@@ -278,5 +279,25 @@ class TestNbgwas_rest(unittest.TestCase):
                 data = json.load(f)
                 self.assertEqual(data[nbgwas_rest.ERROR_PARAM],
                                  'bad')
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_filebasedsubmittedtaskfactory_get_next_task_taskdirnone(self):
+        fac = FileBasedSubmittedTaskFactory(None, None, None)
+        self.assertEqual(fac.get_next_task(), None)
+
+    def test_filebasedsubmittedtaskfactory_get_next_task(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # no submit dir
+            fac = FileBasedSubmittedTaskFactory(temp_dir, None, None)
+            self.assertEqual(fac.get_next_task(), None)
+
+            # empty submit dir
+            sdir = os.path.join(temp_dir, nbgwas_rest.SUBMITTED_STATUS)
+            os.makedirs(sdir, mode=0o755)
+            self.assertEqual(fac.get_next_task(), None)
+
+
         finally:
             shutil.rmtree(temp_dir)

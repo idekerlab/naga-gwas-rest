@@ -238,18 +238,40 @@ class FileBasedTask(object):
         return self._networkx_obj
 
     def set_taskdir(self, taskdir):
+        """
+        Sets task directory
+        :param taskdir:
+        :return:
+        """
         self._taskdir = taskdir
 
     def get_taskdir(self):
+        """
+        Gets task directory
+        :return:
+        """
         return self._taskdir
 
     def set_taskdict(self, taskdict):
+        """
+        Sets task dictionary
+        :param taskdict:
+        :return:
+        """
         self._taskdict = taskdict
 
     def get_taskdict(self):
+        """
+        Gets task dictionary
+        :return:
+        """
         return self._taskdict
 
     def get_alpha(self):
+        """
+        Gets alpha parameter
+        :return: alpha parameter or None
+        """
         if self._taskdict is None:
             return None
         if nbgwas_rest.ALPHA_PARAM not in self._taskdict:
@@ -257,6 +279,10 @@ class FileBasedTask(object):
         return self._taskdict[nbgwas_rest.ALPHA_PARAM]
 
     def get_protein_coding(self):
+        """
+        Gets protein coding parameter
+        :return:
+        """
         if self._taskdict is None:
             return None
         if nbgwas_rest.PROTEIN_CODING_PARAM not in self._taskdict:
@@ -264,6 +290,10 @@ class FileBasedTask(object):
         return self._taskdict[nbgwas_rest.PROTEIN_CODING_PARAM]
 
     def get_window(self):
+        """
+        Gets window parameter
+        :return:
+        """
         if self._taskdict is None:
             return None
         if nbgwas_rest.WINDOW_PARAM not in self._taskdict:
@@ -271,6 +301,10 @@ class FileBasedTask(object):
         return self._taskdict[nbgwas_rest.WINDOW_PARAM]
 
     def get_ndex(self):
+        """
+        Gets ndex parameter
+        :return:
+        """
         if self._taskdict is None:
             return None
         if nbgwas_rest.NDEX_PARAM not in self._taskdict:
@@ -278,6 +312,10 @@ class FileBasedTask(object):
         return self._taskdict[nbgwas_rest.NDEX_PARAM]
 
     def get_snp_level_summary_file(self):
+        """
+        Gets snp level summary file path
+        :return:
+        """
         if self._taskdir is None:
             return None
         snp_file = os.path.join(self._taskdir,
@@ -287,6 +325,16 @@ class FileBasedTask(object):
         return snp_file
 
     def get_protein_coding_file(self):
+        """
+        Gets protein coding file path by first seeing if
+        a file with name nbgwas_rest.PROTEIN_CODING_PARAM
+        resides in the tasks directory otherwise the code
+        looks in the protein coding directory set in the
+        constructor and looks for a file with name
+        from get_protein_coding() (adding the suffix set
+        in constructor if its not None)
+        :return: path to protein coding file or None
+        """
         """Look in task directory for protein coding file
         otherwise look in protein_coding_dir set in constructor
         """
@@ -302,11 +350,13 @@ class FileBasedTask(object):
             return pc_file
 
         if self._protein_coding_dir is None:
+            logger.warning('Protein coding directory is None')
             return None
 
         p_code = self.get_protein_coding()
 
         if p_code is None:
+            logger.warning('Protein coding parameter is None')
             return None
 
         pc_file = os.path.join(self._protein_coding_dir, p_code)
@@ -328,8 +378,10 @@ class FileBasedSubmittedTaskFactory(object):
     def __init__(self, taskdir, protein_coding_dir,
                  protein_coding_suffix):
         self._taskdir = taskdir
-        self._submitdir = os.path.join(self._taskdir,
-                                       nbgwas_rest.SUBMITTED_STATUS)
+        self._submitdir = None
+        if self._taskdir is not None:
+            self._submitdir = os.path.join(self._taskdir,
+                                           nbgwas_rest.SUBMITTED_STATUS)
         self._protein_coding_dir = protein_coding_dir
         self._protein_coding_suffix = protein_coding_suffix
         self._problemlist = []
