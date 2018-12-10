@@ -14,6 +14,7 @@ import time
 import flask
 from flask import Flask, request, jsonify
 from flask_restplus import reqparse, abort, Api, Resource
+import nbgwas
 
 
 
@@ -55,6 +56,9 @@ ERROR_STATUS = 'error'
 RESULT_KEY = 'result'
 
 SNP_ANALYZER_NS = 'snp_analyzer'
+
+REST_VERSION_KEY = 'rest_version'
+ALGO_VERSION_KEY = 'algorithm_version'
 
 api = Api(app, version=str(__version__),
           title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
@@ -443,11 +447,15 @@ class SystemStatus(Resource):
 
         ```Bash
         {
-          "status" : "ok|error"
+          "status" : "ok|error",
+          "rest_version": "1.0",
+          "algorithm_version": "4.0"
         }
         ```
         """
 
-        resp = jsonify({STATUS_RESULT_KEY: SystemStatus.OK_STATUS})
+        resp = jsonify({STATUS_RESULT_KEY: SystemStatus.OK_STATUS,
+                        REST_VERSION_KEY: __version__,
+                        ALGO_VERSION_KEY: nbgwas.__version__})
         resp.status_code = 200
         return resp

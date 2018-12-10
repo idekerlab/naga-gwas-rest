@@ -285,4 +285,7 @@ class TestNbgwas_rest(unittest.TestCase):
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.SystemStatus.OK_STATUS)
+        self.assertEqual(data[nbgwas_rest.REST_VERSION_KEY],
+                         nbgwas_rest.__version__)
+        self.assertTrue(data[nbgwas_rest.ALGO_VERSION_KEY] is not None)
         self.assertEqual(rv.status_code, 200)
