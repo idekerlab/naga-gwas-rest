@@ -85,7 +85,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         self.assertEqual(task.get_task_uuid(), None)
         self.assertEqual(task.get_ipaddress(), None)
         self.assertEqual(task.get_networkx_object(), None)
-        self.assertEqual(task.get_alpha(), None)
+        self.assertEqual(task.get_alpha(), FileBasedTask.OPTIMAL)
         self.assertEqual(task.get_protein_coding(), None)
         self.assertEqual(task.get_window(), None)
         self.assertEqual(task.get_ndex(), None)
@@ -107,7 +107,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         self.assertEqual(task.get_taskdir(), '/foo')
 
         task.set_taskdict({})
-        self.assertEqual(task.get_alpha(), None)
+        self.assertEqual(task.get_alpha(), FileBasedTask.OPTIMAL)
         self.assertEqual(task.get_ndex(), None)
         self.assertEqual(task.get_protein_coding(), None)
         self.assertEqual(task.get_window(), None)

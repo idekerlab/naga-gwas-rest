@@ -75,6 +75,7 @@ class FileBasedTask(object):
     STATE = 'state'
     IPADDR = 'ipaddr'
     UUID = 'uuid'
+    OPTIMAL = 'optimal'
 
     def __init__(self, taskdir, taskdict,
                  protein_coding_dir=None,
@@ -273,10 +274,13 @@ class FileBasedTask(object):
         :return: alpha parameter or None
         """
         if self._taskdict is None:
-            return None
+            return FileBasedTask.OPTIMAL
         if nbgwas_rest.ALPHA_PARAM not in self._taskdict:
-            return None
-        return self._taskdict[nbgwas_rest.ALPHA_PARAM]
+            return FileBasedTask.OPTIMAL
+        res = self._taskdict[nbgwas_rest.ALPHA_PARAM]
+        if res is None:
+            return FileBasedTask.OPTIMAL
+        return res
 
     def get_protein_coding(self):
         """
