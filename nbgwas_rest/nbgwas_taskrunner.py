@@ -647,9 +647,9 @@ class NbgwasTaskRunner(object):
         # the data frame below is the result give the name and
         # Diffused (Log) to the user
         dframe = g.network.node_table[[g.network.node_name,
-                                     NbgwasTaskRunner.DIFFUSED_LOG]]
-        # dframe.to_pickle(os.path.join(task.get_taskdir(), 'mypickle'))
-        result = {gene:score for gene,score in dframe.values}
+                                       NbgwasTaskRunner.DIFFUSED_LOG]].sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
+                                                                                   ascending=False)
+        result = {gene: score for gene, score in dframe.values}
         return result, None
 
     def run_tasks(self):
@@ -694,7 +694,7 @@ def main(args):
                                              theargs.protein_coding_suffix)
         netfac = NetworkXFromNDExFactory(ndex_server=theargs.ndexserver)
         runner = NbgwasTaskRunner(taskfactory=tfac,
-                                  netfac=netfac,
+                                  networkfactory=netfac,
                                   wait_time=theargs.wait_time)
 
         runner.run_tasks()
