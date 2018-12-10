@@ -31,6 +31,39 @@ class TestNbgwas_rest(unittest.TestCase):
         """Tear down test fixtures, if any."""
         pass
 
+    def get_protein_coding(self):
+        return """A1BG    19      63551643        63565932
+A1CF    10      52271589        52315441
+A2M     12      9111570 9159825
+A2ML1   12      8911704 8930864
+A3GALT2 1       33544953        33559286
+A4GALT  22      41418839        41419901
+A4GNT   3       139325249       139333919
+AAAS    12      51987506        52001679
+AACS    12      124155649       124193824
+AADAC   3       153014550       153028966
+AADACL2 3       152934404       152958242
+AADACL3 1       12698704        12711313
+AADACL4 1       12627152        12649684
+AADAT   4       171217947       171247947
+AAK1    2       69624874        69724481
+AAMP    2       218837095       218843137
+""" # noqa
+
+    def get_snp(self):
+        return """snpid hg18chr bp a1 a2 or se pval info ngt CEUaf
+rs3131972       1       742584  A       G       1.0257  0.0835  0.761033        0.1613  0       0.16055
+rs3131969       1       744045  A       G       1.0221  0.0801  0.784919        0.2225  0       0.133028
+rs3131967       1       744197  T       C       1.0227  0.0858  0.79352 0.206   0       .
+rs1048488       1       750775  T       C       0.9749  0.0835  0.761041        0.1613  0       0.836449
+rs12562034      1       758311  A       G       1.0011  0.0756  0.987899        0.1856  3       0.0925926
+rs12124819      1       766409  A       G       1.2838  0.226   0.269088        0.0145  0       .
+rs4040617       1       769185  A       G       0.9787  0.0797  0.786883        0.233   3       0.87156
+rs4970383       1       828418  A       C       1.116   0.1159  0.343555        0.0403  0       0.201835
+rs4475691       1       836671  T       C       1.0926  0.0847  0.295819        0.0903  1       0.146789
+rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        0.0611  0       0.600917
+""" # noqa
+
     def test_parse_arguments(self):
         """Test something."""
         res = nt._parse_arguments('hi', ['--protein_coding_dir',
@@ -378,6 +411,13 @@ class TestNbgwas_rest(unittest.TestCase):
         runner = NbgwasTaskRunner()
         self.assertEqual(runner._get_networkx_object(task), None)
 
+    def test_nbgwastaskrunner_get_networkx_object_from_ndex_no_network(self):
+        mock_network_fac = NetworkXFromNDExFactory()
+        mock_network_fac.get_networkx_object = MagicMock(return_value=None)
+        runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+        res = runner._get_networkx_object_from_ndex('123')
+        self.assertTrue(res is None)
+
     def test_nbgwastaskrunner_get_networkx_object_from_ndex_valid_network(self):
         mock_network_fac = NetworkXFromNDExFactory()
         net_obj = nx.Graph()
@@ -392,6 +432,61 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(res.node['node1']['name'], 'node1')
         self.assertEqual(res.node['node2']['name'], 'node2')
 
+    def test_nbgwastaskrunner_process_task_networkx_is_none(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            mock_network_fac = NetworkXFromNDExFactory()
+            mock_network_fac.get_networkx_object = MagicMock(return_value=None)
+            runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+            taskdir = os.path.join(temp_dir, nbgwas_rest.SUBMITTED_STATUS,
+                                   '1.2.3.4', 'taskuuid')
+            os.makedirs(taskdir, mode=0o755)
+            task = FileBasedTask(taskdir, {nbgwas_rest.NDEX_PARAM: 'someid'})
+            runner._process_task(task)
+
+            self.assertTrue(nbgwas_rest.DONE_STATUS in task.get_taskdir())
+            self.assertEqual(task.get_taskdict()[nbgwas_rest.ERROR_STATUS],
+                             'Unable to get networkx object for task')
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_nbgwastaskrunner_process_task_with_mini_snp_pc(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            mock_network_fac = NetworkXFromNDExFactory()
+            net_obj = nx.Graph()
+            net_obj.add_node(1, {NbgwasTaskRunner.NDEX_NAME: 'node1'})
+            net_obj.add_node(2, {NbgwasTaskRunner.NDEX_NAME: 'node2'})
+            net_obj.add_edge(1, 2)
+            mock_network_fac.get_networkx_object = MagicMock(return_value=net_obj)
+            runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+            taskdir = os.path.join(temp_dir, nbgwas_rest.SUBMITTED_STATUS,
+                                   '1.2.3.4', 'taskuuid')
+            os.makedirs(taskdir, mode=0o755)
+            snpfile = os.path.join(taskdir, nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+            with open(snpfile, 'w') as f:
+                f.write(self.get_snp())
+                f.flush()
+            pcfile = os.path.join(taskdir, nbgwas_rest.PROTEIN_CODING_PARAM)
+            with open(pcfile, 'w') as f:
+                f.write(self.get_protein_coding())
+                f.flush()
+
+            task = FileBasedTask(taskdir, {nbgwas_rest.NDEX_PARAM: 'someid',
+                                           nbgwas_rest.WINDOW_PARAM: 100,
+                                           nbgwas_rest.ALPHA_PARAM: 0.2})
+            runner._process_task(task)
+            self.assertTrue(nbgwas_rest.DONE_STATUS in task.get_taskdir())
+            self.assertTrue(nbgwas_rest.ERROR_STATUS not in task.get_taskdict())
+
+            result = os.path.join(task.get_taskdir(), nbgwas_rest.RESULT)
+            with open(result, 'r') as f:
+                data = json.load(f)
+
+            self.assertEqual(data['node1'], 0.0)
+            self.assertEqual(data['node2'], 0.0)
+        finally:
+            shutil.rmtree(temp_dir)
 
 
 

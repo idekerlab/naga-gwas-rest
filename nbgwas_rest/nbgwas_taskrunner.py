@@ -157,7 +157,7 @@ class FileBasedTask(object):
     def _get_uuid_ip_state_basedir_from_path(self):
         """
         Parses taskdir path into main parts and returns
-        result as tuple
+        result as dict
         :return: {'basedir': basedir,
                   'state': state
                   'ipaddr': ip address,
@@ -578,6 +578,7 @@ class NbgwasTaskRunner(object):
             task.move_task(nbgwas_rest.ERROR_STATUS,
                            error_message=emsg)
             return
+
         task.set_networkx_object(n_obj)
 
         result, emsg = self._run_nbgwas(task)
@@ -599,7 +600,9 @@ class NbgwasTaskRunner(object):
     def _run_nbgwas(self, task):
         """
         Runs nbgwas processing
-        :param task: The task to process
+        :param task: The task to process which is assumed to
+                     have a valid network when task.get_networkx_object()
+                     is called
         :return: tuple if successful result will be ({}, None) otherwise
                  (None, 'str containing error message') or (None, None)
 
@@ -624,12 +627,7 @@ class NbgwasTaskRunner(object):
         g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
 
-        net_obj = task.get_networkx_object()
-
-        if net_obj is None:
-            return None, 'Unable to get network from NDEx'
-
-        g.network = net_obj
+        g.network = task.get_networkx_object()
 
         g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
                                      NbgwasTaskRunner.NEGATIVE_LOG])
