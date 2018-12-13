@@ -12,7 +12,7 @@ nbgwas_rest
 
 
 
-REST service for `Network Boosted Genome Wide Association Studies (NBGWAS) <https://github.com/shfong/nbgwas/>`_
+REST service for `Network Assisted Genomic Association (NAGA) <https://github.com/shfong/nbgwas/>`_
 
 `For more information please click here to visit our wiki <https://github.com/idekerlab/nbgwas_rest/wiki>`_
 
