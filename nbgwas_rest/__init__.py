@@ -17,7 +17,6 @@ from flask_restplus import reqparse, abort, Api, Resource
 import nbgwas
 
 
-
 desc = """This system is designed to use biological networks to analyze GWAS results.
 
 A GWAS association score is assigned to the genes. A molecular network is downloaded from the NDEx database, and network propagation is performed, providing a set of
@@ -61,7 +60,7 @@ REST_VERSION_KEY = 'rest_version'
 ALGO_VERSION_KEY = 'algorithm_version'
 
 api = Api(app, version=str(__version__),
-          title='Network Boosted Genome Wide Association Studies (NBGWAS) ',
+          title='Network Assisted Genomic Association (NAGA) ',
           description=desc, example='put example here')
 
 # need to clear out the default namespace
@@ -79,6 +78,9 @@ UUID_PARAM = 'uuid'
 ERROR_PARAM = 'error'
 WINDOW_PARAM = 'window'
 SNP_LEVEL_SUMMARY_PARAM = 'snp_level_summary'
+SNP_LEVEL_SUMMARY_COL_LABEL_PARAM = 'snp_level_summary_column_labels'
+SNP_LEVEL_SUMMARY_COL_LABELS = 'chromosome,basepair,pvalue'
+PCNET_UUID = 'f93f402c-86d4-11e7-a10d-0ac135e8bacf'
 PROTEIN_CODING_PARAM = 'protein_coding'
 
 SNP_ANALYZER_TASK = 'snpanalyzer'
@@ -261,46 +263,57 @@ def wait_for_task(uuidstr, hintlist=None):
 
 post_parser = reqparse.RequestParser()
 post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19'],
-                         default='hg19', required=True,
+                         default='hg18', required=True,
                          help='Sets which protein coding table to use. '
-                              ' Values correspond to NCBI Human Genome Builds',
+                              ' Values correspond to [NCBI Human Genome '
+                              'Builds](https://www.ncbi.nlm.nih.gov/'
+                              'projects/genome/guide/human/)',
                          location='form')
 post_parser.add_argument(NDEX_PARAM, required=True,
-                         help='NDEx (http://www.ndexbio.org) UUID of network '
-                              'to load. For example, to use the Parsimonious '
-                              'Composite Network (PCNet), one would use this:'
-                              ' f93f402c-86d4-11e7-a10d-0ac135e8bacf',
+                         help='[NDEx](http://www.ndexbio.org) UUID of network '
+                              'to load. For example, to use the [Parsimonious '
+                              'Composite Network (PCNet)](http://www.ndexbio.'
+                              'org/#/network/' +
+                              PCNET_UUID + '), one would enter this value:'
+                              ' `' + PCNET_UUID + '`',
+                         default=PCNET_UUID,
                          location='form')
 post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage,
                          required=True,
-                         help='Comma or tab delimited file with format of'
-                              ' chromosome,basepair,p_value. To dictate '
-                              'columns from the file, please directly '
-                              'install the nbgwas library directly. See '
-                              ' https://github.com/shfong/nbgwas for '
-                              'more information. **NOTE:** This'
-                              ' code assumes the first line of the file is'
-                              ' the header', location='files')
+                         help='Comma or tab delimited file with a header line'
+                              ' that contains chromosome, base pair '
+                              'location, and p value for each SNP. These '
+                              'columns need to have the following names set: '
+                              ' `chromosome, basepair, and p_value`',
+                         location='files')
 post_parser.add_argument(ALPHA_PARAM, type=float,
                          help='Sets propagation constant alpha with allowed '
-                              'values between 0 and 1, representing the '
+                              'values between `0 and 1`, representing the '
                               'probability of walking to network neighbors '
-                              'as opposed to reseting to the original '
+                              'as opposed to resetting to the original '
                               'distribution. Larger values induce more '
                               'spread on the network. If unset, then optimal'
                               ' parameter is selected by linear model derived'
-                              ' from (huang, cell systems 2018 '
-                              'https://doi.org/10.1016/j.cels.2018.03.001)',
+                              ' from ([Huang, Cell Systems 2018](https://doi'
+                              '.org/10.1016/j.cels.2018.03.001))',
                          location='form')
 post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
-                         help='Window search size in base pairs used in snp search',
+                         help='Window search size in base pairs used in SNP '
+                              'search',
+                         location='form')
+
+post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str,
+                         help='Comma delimited list that specifies the column '
+                              'names for **chromsome, basepair location, and '
+                              'pvalue** for data in the SNP Level Summary file',
+                         default=SNP_LEVEL_SUMMARY_COL_LABELS,
                          location='form')
 
 
-@api.doc('Runs NEtwork boosted gwas')
+@api.doc('Runs Network Assisted Genomic Association')
 @ns.route('/', strict_slashes=False)
 class TaskBasedRestApp(Resource):
-    @api.doc('Runs Network Boosted GWAS',
+    @api.doc('Runs Network Assisted Genomic Association',
              responses={
                  202: 'The task was successfully submitted to the service. Visit the URL'
                       ' specified in **Location** field in HEADERS to status and results',
@@ -337,20 +350,20 @@ class TaskBasedRestApp(Resource):
 @ns.route('/<string:id>', strict_slashes=False)
 class GetTask(Resource):
 
-    @api.doc('Gets status and response of submitted NBGWAS snpanalyzer',
+    @api.doc('Gets status and response of submitted NAGA snp_analyzer',
              responses={
                  200: 'Success in asking server, but does not mean'
-                      'snpanalyzer has completed. See the json response'
+                      'snp_analyzer has completed. See the json response'
                       'in body for status',
                  410: 'Task not found',
                  500: 'Internal server error'
              })
     def get(self, id):
         """
-        Gets result of snpanalyzer if completed
+        Gets result of snp_analyzer if completed
 
-        **{id}** is the id of the snpanalyzer obtained from **Location** field in
-        **HEADERS** of **/nbgwas/snpanalyzer POST** endpoint
+        **{id}** is the id of the snp_analyzer obtained from **Location** field in
+        **HEADERS** of **/snp_analyzer POST** endpoint
 
 
         The status will be returned in this json format:
