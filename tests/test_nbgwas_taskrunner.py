@@ -106,6 +106,9 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         task.set_taskdir('/foo')
         self.assertEqual(task.get_taskdir(), '/foo')
 
+        task.set_taskdict({nbgwas_rest.ALPHA_PARAM: None})
+        self.assertEqual(task.get_alpha(), FileBasedTask.OPTIMAL)
+
         task.set_taskdict({})
         self.assertEqual(task.get_alpha(), FileBasedTask.OPTIMAL)
         self.assertEqual(task.get_ndex(), None)
