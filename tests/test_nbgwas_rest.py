@@ -38,7 +38,7 @@ class TestNbgwas_rest(unittest.TestCase):
         """Test something."""
         rv = self._app.get('/')
         self.assertEqual(rv.status_code, 200)
-        self.assertTrue('Network Boosted' in str(rv.data))
+        self.assertTrue('Network Assisted' in str(rv.data))
 
     def test_get_submit_dir(self):
         spath = os.path.join(self._temp_dir, nbgwas_rest.SUBMITTED_STATUS)
@@ -171,6 +171,7 @@ class TestNbgwas_rest(unittest.TestCase):
         pdict['protein_coding'] = 'hg19'
         pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = (io.BytesIO(b'hi there'),
                                                       'yo.txt')
+        pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_COL_LABEL_PARAM] = 'hi,how,are'
         rv = self._app.post(nbgwas_rest.SNP_ANALYZER_NS, data=pdict,
                             follow_redirects=True)
         self.assertEqual(rv.status_code, 202)
@@ -191,6 +192,8 @@ class TestNbgwas_rest(unittest.TestCase):
 
         self.assertEqual(jdata[nbgwas_rest.ALPHA_PARAM], 0.5)
         self.assertEqual(jdata[nbgwas_rest.NDEX_PARAM], 'someid')
+        self.assertEqual(jdata[nbgwas_rest.SNP_LEVEL_SUMMARY_COL_LABEL_PARAM],
+                         'hi,how,are')
 
     def test_get_id_none(self):
         rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS)
