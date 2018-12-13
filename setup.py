@@ -83,7 +83,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/coleslaw481/nbgwas_rest',
+    url='https://github.com/idekerlab/nbgwas_rest',
     version=version,
     zip_safe=False,
 )

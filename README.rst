@@ -6,15 +6,15 @@ nbgwas_rest
 .. image:: https://img.shields.io/pypi/v/nbgwas_rest.svg
         :target: https://pypi.python.org/pypi/nbgwas_rest
 
-.. image:: https://img.shields.io/travis/coleslaw481/nbgwas_rest.svg
-        :target: https://travis-ci.org/coleslaw481/nbgwas_rest
+.. image:: https://img.shields.io/travis/idekerlab/nbgwas_rest.svg
+        :target: https://travis-ci.org/idekerlab/nbgwas_rest
 
 
 
 
 REST service for `Network Boosted Genome Wide Association Studies (NBGWAS) <https://github.com/shfong/nbgwas/>`_
 
-`For more information please click here to visit our wiki <https://github.com/coleslaw481/nbgwas_rest/wiki>`_
+`For more information please click here to visit our wiki <https://github.com/idekerlab/nbgwas_rest/wiki>`_
 
 Compatibility
 -------------
@@ -54,7 +54,7 @@ It is highly reccommended one use `Anaconda <https://www.anaconda.com/>`_ for Py
 
 .. code:: bash
 
-  git clone https://github.com/coleslaw481/nbgwas_rest.git
+  git clone https://github.com/idekerlab/nbgwas_rest.git
   cd nbgwas_rest
   make install
 
@@ -67,7 +67,7 @@ Running server in development mode
   export FLASK_APP=nbgwas_rest
   flask run # --host=0.0.0.0 can be added to allow all access from interfaces
   
-  # Service will be running on http://localhost:5000/nbgwas
+  # Service will be running on http://localhost:5000
 
   # NOTE: To have tasks processed nbgwas_taskrunner.py must be started in
   # another terminal
@@ -92,7 +92,7 @@ Below is a small quick and dirty script that leverages the nbgwas_rest service t
    data_dict['seeds']='geneone,genetwo'
    data_dict['alpha']=0.2
    files = {'network': open(networkfile, 'rb')}
-   url = 'http://localhost:5000/nbgwas'
+   url = 'http://localhost:5000/snp_analyzer'
    r = requests.post(url, data=data_dict, files=files)
    sys.stdout.write(str(r.text) + '\n')
    sys.stdout.write(str(r.status_code) + '\n')
@@ -107,7 +107,7 @@ Assuming the above is saved in a file named foo.py
 Bugs
 -----
 
-Please report them `here <https://github.com/coleslaw481/nbgwas_rest/issues>`_
+Please report them `here <https://github.com/idekerlab/nbgwas_rest/issues>`_
 
 Acknowledgements
 ----------------

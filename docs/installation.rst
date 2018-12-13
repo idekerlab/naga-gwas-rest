@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/coleslaw481/nbgwas_rest
+    $ git clone git://github.com/idekerlab/nbgwas_rest
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/coleslaw481/nbgwas_rest/tarball/master
+    $ curl  -OL https://github.com/idekerlab/nbgwas_rest/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/coleslaw481/nbgwas_rest
-.. _tarball: https://github.com/coleslaw481/nbgwas_rest/tarball/master
+.. _Github repo: https://github.com/idekerlab/nbgwas_rest
+.. _tarball: https://github.com/idekerlab/nbgwas_rest/tarball/master

@@ -51,7 +51,7 @@ python setup.py build
 python setup.py install
 popd
 
-git clone https://github.com/coleslaw481/nbgwas_rest.git
+git clone https://github.com/idekerlab/nbgwas_rest.git
 pushd nbgwas_rest
 git checkout taskbased
 make dist
