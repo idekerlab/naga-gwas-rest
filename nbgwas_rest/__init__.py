@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 import os
 import shutil
@@ -79,7 +79,14 @@ ERROR_PARAM = 'error'
 WINDOW_PARAM = 'window'
 SNP_LEVEL_SUMMARY_PARAM = 'snp_level_summary'
 SNP_LEVEL_SUMMARY_COL_LABEL_PARAM = 'snp_level_summary_column_labels'
-SNP_LEVEL_SUMMARY_COL_LABELS = 'chromosome,basepair,pvalue'
+
+SNP_LEVEL_SUMMARY_CHROM_COL = 'chromosome'
+SNP_LEVEL_SUMMARY_BP_COL = 'basepair'
+SNP_LEVEL_SUMMARY_PVAL_COL = 'pvalue'
+
+SNP_LEVEL_SUMMARY_COL_LABELS = (SNP_LEVEL_SUMMARY_CHROM_COL + ',' +
+                                SNP_LEVEL_SUMMARY_BP_COL + ',' +
+                                SNP_LEVEL_SUMMARY_PVAL_COL)
 PCNET_UUID = 'f93f402c-86d4-11e7-a10d-0ac135e8bacf'
 PROTEIN_CODING_PARAM = 'protein_coding'
 
@@ -269,7 +276,7 @@ post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19'],
                               'Builds](https://www.ncbi.nlm.nih.gov/'
                               'projects/genome/guide/human/)',
                          location='form')
-post_parser.add_argument(NDEX_PARAM, required=True,
+post_parser.add_argument(NDEX_PARAM, required=True, trim=True,
                          help='[NDEx](http://www.ndexbio.org) UUID of network '
                               'to load. For example, to use the [Parsimonious '
                               'Composite Network (PCNet)](http://www.ndexbio.'
@@ -283,8 +290,8 @@ post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage,
                          help='Comma or tab delimited file with a header line'
                               ' that contains chromosome, base pair '
                               'location, and p value for each SNP. These '
-                              'columns need to have the following names set: '
-                              ' `chromosome, basepair, and p_value`',
+                              'columns need to have same names as set with **' +
+                              SNP_LEVEL_SUMMARY_COL_LABEL_PARAM + '** parameter',
                          location='files')
 post_parser.add_argument(ALPHA_PARAM, type=float,
                          help='Sets propagation constant alpha with allowed '
@@ -302,7 +309,7 @@ post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
                               'search',
                          location='form')
 
-post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str,
+post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str, trim=True,
                          help='Comma delimited list that specifies the column '
                               'names for **chromsome, basepair location, and '
                               'pvalue** for data in the SNP Level Summary file',
