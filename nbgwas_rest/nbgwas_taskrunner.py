@@ -303,6 +303,55 @@ class FileBasedTask(object):
             return None
         return self._taskdict[nbgwas_rest.WINDOW_PARAM]
 
+    def _get_value_from_snp_column_label_string(self, the_index):
+        """
+        Parses snp level summary column label parameter by comma
+        :param the_index: index of value to return
+        :returns: string
+        """
+        if self._taskdict is None:
+            return None
+        if nbgwas_rest.SNP_LEVEL_SUMMARY_COL_LABEL_PARAM not in self._taskdict:
+            return None
+        the_str = self._taskdict[nbgwas_rest.SNP_LEVEL_SUMMARY_COL_LABEL_PARAM]
+
+        split_str = the_str.split(',')
+        if the_index < 0:
+            return None
+        if the_index >= len(split_str):
+            return None
+        return split_str[the_index]
+
+    def get_snp_chromosome_label(self):
+        """
+        Gets label for chromosome column in SNP level summary file
+        :return:
+        """
+        res = self._get_value_from_snp_column_label_string(0)
+        if res is None:
+            return nbgwas_rest.SNP_LEVEL_SUMMARY_CHROM_COL
+        return res
+
+    def get_snp_basepair_label(self):
+        """
+        Gets label for basepair column in SNP level summary file
+        :return:
+        """
+        res = self._get_value_from_snp_column_label_string(1)
+        if res is None:
+            return nbgwas_rest.SNP_LEVEL_SUMMARY_BP_COL
+        return res
+
+    def get_snp_pvalue_label(self):
+        """
+        Gets label for pvalue column in SNP level summary file
+        :return:
+        """
+        res = self._get_value_from_snp_column_label_string(2)
+        if res is None:
+            return nbgwas_rest.SNP_LEVEL_SUMMARY_PVAL_COL
+        return res
+
     def get_ndex(self):
         """
         Gets ndex parameter
@@ -583,6 +632,9 @@ class NbgwasTaskRunner(object):
         g.snps.from_files(
             task.get_snp_level_summary_file(),
             task.get_protein_coding_file(),
+            snp_chrom_col=task.get_snp_chromosome_label(),
+            snp_bp_col=task.get_snp_basepair_label(),
+            pval_col=task.get_snp_pvalue_label(),
             snp_kwargs={'sep': '\s+|\s*,\s*'},
             pc_kwargs={'sep': '\s+', 'names': ['Chrom', 'Start', 'End'],
                        'index_col': 0}
