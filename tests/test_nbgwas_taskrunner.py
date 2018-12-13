@@ -51,7 +51,7 @@ AAMP    2       218837095       218843137
 """ # noqa
 
     def get_snp(self):
-        return """snpid hg18chr bp a1 a2 or se pval info ngt CEUaf
+        return """snpid chromosome basepair a1 a2 or se pvalue info ngt CEUaf
 rs3131972       1       742584  A       G       1.0257  0.0835  0.761033        0.1613  0       0.16055
 rs3131969       1       744045  A       G       1.0221  0.0801  0.784919        0.2225  0       0.133028
 rs3131967       1       744197  T       C       1.0227  0.0858  0.79352 0.206   0       .
@@ -94,6 +94,12 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         self.assertEqual(task.get_taskdir(), None)
         self.assertEqual(task.get_snp_level_summary_file(), None)
         self.assertEqual(task.get_protein_coding_file(), None)
+        self.assertEqual(task.get_snp_chromosome_label(),
+                         nbgwas_rest.SNP_LEVEL_SUMMARY_CHROM_COL)
+        self.assertEqual(task.get_snp_basepair_label(),
+                         nbgwas_rest.SNP_LEVEL_SUMMARY_BP_COL)
+        self.assertEqual(task.get_snp_pvalue_label(),
+                         nbgwas_rest.SNP_LEVEL_SUMMARY_PVAL_COL)
 
         self.assertEqual(task.get_task_summary_as_str(),
                          "{'basedir': None, 'state': None,"
@@ -114,6 +120,13 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         self.assertEqual(task.get_ndex(), None)
         self.assertEqual(task.get_protein_coding(), None)
         self.assertEqual(task.get_window(), None)
+        self.assertEqual(task.get_snp_chromosome_label(),
+                         nbgwas_rest.SNP_LEVEL_SUMMARY_CHROM_COL)
+        self.assertEqual(task.get_snp_basepair_label(),
+                         nbgwas_rest.SNP_LEVEL_SUMMARY_BP_COL)
+        self.assertEqual(task.get_snp_pvalue_label(),
+                         nbgwas_rest.SNP_LEVEL_SUMMARY_PVAL_COL)
+
         temp_dir = tempfile.mkdtemp()
         try:
             task.set_taskdir(temp_dir)
@@ -127,11 +140,18 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         task.set_taskdict({nbgwas_rest.ALPHA_PARAM: 0.1,
                            nbgwas_rest.NDEX_PARAM: 'ndex3',
                            nbgwas_rest.PROTEIN_CODING_PARAM: 'yo',
-                           nbgwas_rest.WINDOW_PARAM: 10})
+                           nbgwas_rest.WINDOW_PARAM: 10,
+                           nbgwas_rest.SNP_LEVEL_SUMMARY_COL_LABEL_PARAM: 'a,b,c'
+                           })
         self.assertEqual(task.get_alpha(), 0.1)
         self.assertEqual(task.get_ndex(), 'ndex3')
         self.assertEqual(task.get_protein_coding(), 'yo')
         self.assertEqual(task.get_window(), 10)
+        self.assertEqual(task.get_snp_chromosome_label(), 'a')
+        self.assertEqual(task.get_snp_basepair_label(), 'b')
+        self.assertEqual(task.get_snp_pvalue_label(), 'c')
+        self.assertEqual(task._get_value_from_snp_column_label_string(-1), None)
+        self.assertEqual(task._get_value_from_snp_column_label_string(3), None)
 
     def test_filebasedtask_get_protein_coding_file_no_protein_coding_dir(self):
         temp_dir = tempfile.mkdtemp()
