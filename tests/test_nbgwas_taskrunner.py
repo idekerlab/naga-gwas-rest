@@ -131,7 +131,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         try:
             task.set_taskdir(temp_dir)
             self.assertEqual(task.get_snp_level_summary_file(), None)
-            thefile = os.path.join(temp_dir, nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+            thefile = os.path.join(temp_dir,
+                                   nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
             open(thefile, 'a').close()
             self.assertEqual(task.get_snp_level_summary_file(), thefile)
         finally:
@@ -141,7 +142,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                            nbgwas_rest.NDEX_PARAM: 'ndex3',
                            nbgwas_rest.PROTEIN_CODING_PARAM: 'yo',
                            nbgwas_rest.WINDOW_PARAM: 10,
-                           nbgwas_rest.SNP_LEVEL_SUMMARY_COL_LABEL_PARAM: 'a,b,c'
+                           nbgwas_rest.
+                          SNP_LEVEL_SUMMARY_COL_LABEL_PARAM: 'a,b,c'
                            })
         self.assertEqual(task.get_alpha(), 0.1)
         self.assertEqual(task.get_ndex(), 'ndex3')
@@ -150,7 +152,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         self.assertEqual(task.get_snp_chromosome_label(), 'a')
         self.assertEqual(task.get_snp_basepair_label(), 'b')
         self.assertEqual(task.get_snp_pvalue_label(), 'c')
-        self.assertEqual(task._get_value_from_snp_column_label_string(-1), None)
+        self.assertEqual(task._get_value_from_snp_column_label_string(-1),
+                         None)
         self.assertEqual(task._get_value_from_snp_column_label_string(3), None)
 
     def test_filebasedtask_get_protein_coding_file_no_protein_coding_dir(self):
@@ -159,7 +162,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             tdict = {nbgwas_rest.PROTEIN_CODING_PARAM: 'yo'}
             task = FileBasedTask(temp_dir, tdict)
             self.assertEqual(task.get_protein_coding_file(), None)
-            pc_file = os.path.join(temp_dir,nbgwas_rest.PROTEIN_CODING_PARAM)
+            pc_file = os.path.join(temp_dir, nbgwas_rest.PROTEIN_CODING_PARAM)
             open(pc_file, 'a').close()
             self.assertEqual(task.get_protein_coding_file(), pc_file)
         finally:
@@ -196,7 +199,6 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             self.assertEqual(task.get_protein_coding_file(), pc_file_txt)
         finally:
             shutil.rmtree(temp_dir)
-
 
     def test_filebasedtask_get_uuid_ip_state_basedir_from_path(self):
         # taskdir is none
@@ -441,7 +443,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         res = runner._get_networkx_object_from_ndex('123')
         self.assertTrue(res is None)
 
-    def test_nbgwastaskrunner_get_networkx_object_from_ndex_valid_network(self):
+    def test_nbgwastaskrunner_get_networkx_object_from_ndex_valid_net(self):
         mock_network_fac = NetworkXFromNDExFactory()
         net_obj = nx.Graph()
         net_obj.add_node(1, {NbgwasTaskRunner.NDEX_NAME: 'node1'})
@@ -481,12 +483,14 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             net_obj.add_node(1, {NbgwasTaskRunner.NDEX_NAME: 'node1'})
             net_obj.add_node(2, {NbgwasTaskRunner.NDEX_NAME: 'node2'})
             net_obj.add_edge(1, 2)
-            mock_network_fac.get_networkx_object = MagicMock(return_value=net_obj)
+            mock_network_fac.\
+                get_networkx_object = MagicMock(return_value=net_obj)
             runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
             taskdir = os.path.join(temp_dir, nbgwas_rest.SUBMITTED_STATUS,
                                    '1.2.3.4', 'taskuuid')
             os.makedirs(taskdir, mode=0o755)
-            snpfile = os.path.join(taskdir, nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+            snpfile = os.path.join(taskdir,
+                                   nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
             with open(snpfile, 'w') as f:
                 f.write(self.get_snp())
                 f.flush()
@@ -500,7 +504,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                                            nbgwas_rest.ALPHA_PARAM: 0.2})
             runner._process_task(task)
             self.assertTrue(nbgwas_rest.DONE_STATUS in task.get_taskdir())
-            self.assertTrue(nbgwas_rest.ERROR_STATUS not in task.get_taskdict())
+            self.assertTrue(nbgwas_rest.ERROR_STATUS not in
+                            task.get_taskdict())
 
             result = os.path.join(task.get_taskdir(), nbgwas_rest.RESULT)
             with open(result, 'r') as f:
@@ -510,6 +515,3 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             self.assertEqual(data['node2'], 0.0)
         finally:
             shutil.rmtree(temp_dir)
-
-
-

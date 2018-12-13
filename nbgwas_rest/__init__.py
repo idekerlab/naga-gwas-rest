@@ -151,7 +151,8 @@ def create_task(params):
         params[SNP_LEVEL_SUMMARY_PARAM] is None:
         raise Exception(SNP_LEVEL_SUMMARY_PARAM + ' is required')
 
-    app.logger.debug('snp level summary: ' + str(params[SNP_LEVEL_SUMMARY_PARAM]))
+    app.logger.debug('snp level summary: ' +
+                     str(params[SNP_LEVEL_SUMMARY_PARAM]))
     networkfile_path = os.path.join(taskpath, SNP_LEVEL_SUMMARY_PARAM)
     with open(networkfile_path, 'wb') as f:
         shutil.copyfileobj(params[SNP_LEVEL_SUMMARY_PARAM].stream, f)
@@ -290,8 +291,9 @@ post_parser.add_argument(SNP_LEVEL_SUMMARY_PARAM, type=reqparse.FileStorage,
                          help='Comma or tab delimited file with a header line'
                               ' that contains chromosome, base pair '
                               'location, and p value for each SNP. These '
-                              'columns need to have same names as set with **' +
-                              SNP_LEVEL_SUMMARY_COL_LABEL_PARAM + '** parameter',
+                              'columns need to have same names as set with '
+                              '**' + SNP_LEVEL_SUMMARY_COL_LABEL_PARAM +
+                              '** parameter',
                          location='files')
 post_parser.add_argument(ALPHA_PARAM, type=float,
                          help='Sets propagation constant alpha with allowed '
@@ -309,10 +311,12 @@ post_parser.add_argument(WINDOW_PARAM, type=int, default=10000,
                               'search',
                          location='form')
 
-post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str, trim=True,
+post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str,
+                         trim=True,
                          help='Comma delimited list that specifies the column '
                               'names for **chromsome, basepair location, and '
-                              'pvalue** for data in the SNP Level Summary file',
+                              'pvalue** for data in the SNP Level Summary '
+                              'file',
                          default=SNP_LEVEL_SUMMARY_COL_LABELS,
                          location='form')
 
@@ -322,8 +326,10 @@ post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str, trim=True,
 class TaskBasedRestApp(Resource):
     @api.doc('Runs Network Assisted Genomic Association',
              responses={
-                 202: 'The task was successfully submitted to the service. Visit the URL'
-                      ' specified in **Location** field in HEADERS to status and results',
+                 202: 'The task was successfully submitted to the service. '
+                      'Visit the URL'
+                      ' specified in **Location** field in HEADERS to '
+                      'status and results',
                  500: 'Internal server error'
              })
     @api.header(LOCATION, 'URL endpoint to poll for result of task for '
@@ -350,7 +356,8 @@ class TaskBasedRestApp(Resource):
             app.logger.exception('Error creating task due to OSError' + str(e))
             abort(500, 'Unable to create task ' + str(e))
         except Exception as ea:
-            app.logger.exception('Error creating task due to Exception ' + str(ea))
+            app.logger.exception('Error creating task due to Exception ' +
+                                 str(ea))
             abort(500, 'Unable to create task ' + str(ea))
 
 
@@ -369,7 +376,8 @@ class GetTask(Resource):
         """
         Gets result of snp_analyzer if completed
 
-        **{id}** is the id of the snp_analyzer obtained from **Location** field in
+        **{id}** is the id of the snp_analyzer obtained from
+        **Location** field in
         **HEADERS** of **/snp_analyzer POST** endpoint
 
 
@@ -456,6 +464,7 @@ class GetTask(Resource):
 class SystemStatus(Resource):
 
     OK_STATUS = 'ok'
+
     @api.doc('Gets status',
              responses={
                  200: 'Success',

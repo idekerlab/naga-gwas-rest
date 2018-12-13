@@ -30,7 +30,8 @@ def _parse_arguments(desc, args):
     parser.add_argument('taskdir', help='Base directory where tasks'
                                         'are located')
     parser.add_argument('--protein_coding_dir', required=True,
-                        help='Directory where protein_coding data files reside')
+                        help='Directory where protein_coding data files '
+                             'reside')
     parser.add_argument('--protein_coding_suffix', default='.txt',
                         help='Suffix of protein_coding files in '
                              '--protein_coding_dir directory. (default .txt)')
@@ -371,7 +372,7 @@ class FileBasedTask(object):
         if self._taskdir is None:
             return None
         snp_file = os.path.join(self._taskdir,
-                                     nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+                                nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
         if not os.path.isfile(snp_file):
             return None
         return snp_file
@@ -463,8 +464,10 @@ class FileBasedSubmittedTaskFactory(object):
                             with open(tjson, 'r') as f:
                                 jsondata = json.load(f)
                             return FileBasedTask(subfp, jsondata,
-                                                 protein_coding_dir=self._protein_coding_dir,
-                                                 protein_coding_suffix=self._protein_coding_suffix)
+                                                 protein_coding_dir=self.
+                                                 _protein_coding_dir,
+                                                 protein_coding_suffix=self.
+                                                 _protein_coding_suffix)
                         except Exception as e:
                             if subfp not in self._problemlist:
                                 logger.info('Skipping task: ' + subfp +
@@ -557,7 +560,8 @@ class NbgwasTaskRunner(object):
         """
         Extracts networkx object from ndex and relabels the nodes
         by the name of the node set as NDEX_NAME attribute.
-        For example if original NDEx network looked like this if str(network.node):
+        For example if original NDEx network looked like this if
+        str(network.node):
 
         {1: {'name': 'node1'}, 2: {'name': 'node2'}}
 
@@ -626,8 +630,6 @@ class NbgwasTaskRunner(object):
 
         """
         g = Nbgwas()
-        # snp_level_summary_file = 'hg18/snp_level_summary_stats_pmid_25056061.txt'
-        # protein_coding_file = 'hg18/glist-hg18_proteinCoding.txt'
 
         g.snps.from_files(
             task.get_snp_level_summary_file(),
@@ -663,9 +665,10 @@ class NbgwasTaskRunner(object):
 
         # the data frame below is the result give the name and
         # Diffused (Log) to the user
-        dframe = g.network.node_table[[g.network.node_name,
-                                       NbgwasTaskRunner.DIFFUSED_LOG]].sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
-                                                                                   ascending=False)
+        unsortdf = g.network.node_table[[g.network.node_name,
+                                         NbgwasTaskRunner.DIFFUSED_LOG]]
+        dframe = unsortdf.sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
+                                      ascending=False)
         result = {gene: score for gene, score in dframe.values}
         return result, None
 

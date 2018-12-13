@@ -71,7 +71,8 @@ class TestNbgwas_rest(unittest.TestCase):
             pdict['remoteip'] = '1.2.3.4'
             pdict[nbgwas_rest.ALPHA_PARAM] = 0.5
             pdict['protein_coding'] = 'hg19'
-            snpfile = FileStorage(stream=io.BytesIO(b'hi there'), filename='yo.txt')
+            snpfile = FileStorage(stream=io.BytesIO(b'hi there'),
+                                  filename='yo.txt')
             pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = snpfile
             nbgwas_rest.create_task(pdict)
             self.fail('Expected exception')
@@ -86,7 +87,8 @@ class TestNbgwas_rest(unittest.TestCase):
         pdict[nbgwas_rest.ALPHA_PARAM] = 0.5
         pdict['protein_coding'] = 'hg19'
         pdict[nbgwas_rest.NDEX_PARAM] = 'c3946381-745a-4f15-810c-4c880079034f'
-        snpfile = FileStorage(stream=io.BytesIO(b'hi there'), filename='yo.txt')
+        snpfile = FileStorage(stream=io.BytesIO(b'hi there'),
+                              filename='yo.txt')
         pdict[nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM] = snpfile
         res = nbgwas_rest.create_task(pdict)
         self.assertTrue(res is not None)
