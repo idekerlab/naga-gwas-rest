@@ -14,7 +14,6 @@ import time
 import flask
 from flask import Flask, request, jsonify
 from flask_restplus import reqparse, abort, Api, Resource
-import nbgwas
 
 
 desc = """This system is designed to use biological networks to analyze GWAS results.
@@ -477,14 +476,12 @@ class SystemStatus(Resource):
         ```Bash
         {
           "status" : "ok|error",
-          "rest_version": "1.0",
-          "algorithm_version": "4.0"
+          "rest_version": "1.0"
         }
         ```
         """
 
         resp = jsonify({STATUS_RESULT_KEY: SystemStatus.OK_STATUS,
-                        REST_VERSION_KEY: __version__,
-                        ALGO_VERSION_KEY: nbgwas.__version__})
+                        REST_VERSION_KEY: __version__})
         resp.status_code = 200
         return resp
