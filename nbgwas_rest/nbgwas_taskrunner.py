@@ -117,7 +117,8 @@ class FileBasedTask(object):
         return None
 
     def move_task(self, new_state,
-                  error_message=None):
+                  error_message=None,
+                  delete_temp_files=False):
         """
         Changes state of task to new_state
         :param new_state: new state
@@ -153,7 +154,25 @@ class FileBasedTask(object):
                                 taskattrib[FileBasedTask.UUID])
         shutil.move(self._taskdir, ptaskdir)
         self._taskdir = ptaskdir
+
+        if delete_temp_files is True:
+            self._delete_temp_files()
         return None
+
+    def _delete_temp_files(self):
+        """
+        Deletes snp level param file from filesystem
+        :return: None
+        """
+        try:
+            snpfile = self.get_snp_level_summary_file()
+            if snpfile is None:
+                return
+            logger.debug('Removing ' + snpfile)
+            os.unlink(snpfile)
+
+        except OSError:
+            logger.exception('Caught exception trying to remove file')
 
     def _get_uuid_ip_state_basedir_from_path(self):
         """
@@ -578,13 +597,17 @@ class NbgwasTaskRunner(object):
 
         dG = self._networkfactory.get_networkx_object(ndex_id)
         if dG is None:
+            logger.error("None returned trying to get network")
             return None
 
+        logger.debug('Generating name map')
         name_map = {i: j[NbgwasTaskRunner.NDEX_NAME]
                     for i, j in dG.node.items()}
+
+        logger.debug('Calling networkx.relabel_nodes with name map')
         return nx.relabel_nodes(dG, name_map)
 
-    def _process_task(self, task):
+    def _process_task(self, task, delete_temp_files=True):
         """
         Processes a task
         :param taskdir:
@@ -616,7 +639,8 @@ class NbgwasTaskRunner(object):
         logger.info('Task processing completed')
         task.set_result_data(result)
         task.save_task()
-        task.move_task(nbgwas_rest.DONE_STATUS)
+        task.move_task(nbgwas_rest.DONE_STATUS,
+                       delete_temp_files=delete_temp_files)
         return
 
     def _run_nbgwas(self, task):
@@ -629,8 +653,10 @@ class NbgwasTaskRunner(object):
                  (None, 'str containing error message') or (None, None)
 
         """
+        logger.debug('Creating Nbgwas object')
         g = Nbgwas()
 
+        logger.debug('Creating NBgwas.Snps object')
         g.snps.from_files(
             task.get_snp_level_summary_file(),
             task.get_protein_coding_file(),
@@ -642,33 +668,51 @@ class NbgwasTaskRunner(object):
                        'index_col': 0}
         )
 
+        logger.debug('Assigning SNPS to genes')
         g.genes = g.snps.assign_snps_to_genes(window_size=task.get_window(),
                                               to_Gene=True)
 
+        logger.debug('Converting to head using method: ' +
+                     NbgwasTaskRunner.BINARIZE_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.BINARIZE_HEAT_METHOD,
                                 name=NbgwasTaskRunner.BINARIZED_HEAT)
+
+        logger.debug('2nd converting to head using method: ' +
+                     NbgwasTaskRunner.NEG_LOG_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
 
         g.network = task.get_networkx_object()
 
+        logger.debug('map to node table')
         g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
                                      NbgwasTaskRunner.NEGATIVE_LOG])
+
+        logger.debug('Running diffuse ')
         g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
                   node_attribute=NbgwasTaskRunner.BINARIZED_HEAT,
                   result_name=NbgwasTaskRunner.DIFFUSED_BINARIZED)
+
+        logger.debug('Running diffuse 2')
+
         g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
+
+        logger.debug('Extract node name and scores from node_table')
         # the data frame below is the result give the name and
         # Diffused (Log) to the user
         unsortdf = g.network.node_table[[g.network.node_name,
                                          NbgwasTaskRunner.DIFFUSED_LOG]]
+
+        logger.debug('Sort results by scores')
         dframe = unsortdf.sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
                                       ascending=False)
+
+        logger.debug('Put results into dict()')
         result = {gene: score for gene, score in dframe.values}
         return result, None
 

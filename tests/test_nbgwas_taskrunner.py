@@ -344,6 +344,50 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_filebasedtask_delete_temp_files(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            processdir = os.path.join(temp_dir, nbgwas_rest.PROCESSING_STATUS)
+            os.makedirs(processdir, mode=0o755)
+            donedir = os.path.join(temp_dir, nbgwas_rest.DONE_STATUS)
+            os.makedirs(donedir, mode=0o755)
+            ataskdir = os.path.join(processdir, '192.168.1.1', 'qwerty-qwerty')
+            os.makedirs(ataskdir)
+            taskdict = {'hi': 'bye'}
+            task = FileBasedTask(ataskdir, taskdict)
+            self.assertEqual(task.save_task(), None)
+
+            # try move with delete true, but no file to delete
+            self.assertEqual(task.move_task(nbgwas_rest.DONE_STATUS,
+                                            delete_temp_files=True), None)
+
+            # move task back to processing
+            self.assertEqual(task.move_task(nbgwas_rest.PROCESSING_STATUS),
+                             None)
+
+            # add file and try move to done with delete set to false
+            snpfile = os.path.join(task.get_taskdir(),
+                                   nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM)
+            open(snpfile, 'a').close()
+
+            self.assertEqual(task.move_task(nbgwas_rest.DONE_STATUS),
+                             None)
+
+            self.assertTrue(os.path.isfile(task.get_snp_level_summary_file()))
+
+            # move back and try move to done with delete set to true
+            self.assertEqual(task.move_task(nbgwas_rest.PROCESSING_STATUS),
+                             None)
+
+            self.assertEqual(task.move_task(nbgwas_rest.DONE_STATUS,
+                                            delete_temp_files=True),
+                             None)
+            self.assertEqual(task.get_snp_level_summary_file(), None)
+
+
+        finally:
+            shutil.rmtree(temp_dir)
+
     def test_filebasedsubmittedtaskfactory_get_next_task_taskdirnone(self):
         fac = FileBasedSubmittedTaskFactory(None, None, None)
         self.assertEqual(fac.get_next_task(), None)
