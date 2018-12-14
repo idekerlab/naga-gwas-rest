@@ -138,8 +138,26 @@ class TestNbgwas_rest(unittest.TestCase):
         self.assertEqual(nbgwas_rest.wait_for_task('haha'), taskdir)
 
     def test_delete(self):
-        rv = self._app.delete(nbgwas_rest.SNP_ANALYZER_NS + '/1')
-        self.assertEqual(rv.status_code, 503)
+        rv = self._app.delete(nbgwas_rest.SNP_ANALYZER_NS + '/yoyo')
+        self.assertEqual(rv.status_code, 200)
+        delete_file = os.path.join(self._temp_dir, nbgwas_rest.DELETE_REQUESTS,
+                                   'yoyo')
+        self.assertTrue(os.path.isfile(delete_file))
+
+        # try with not set path
+        rv = self._app.delete(nbgwas_rest.SNP_ANALYZER_NS + '/')
+        self.assertEqual(rv.status_code, 405)
+
+        # try with path greater then 40 characters
+        rv = self._app.delete(nbgwas_rest.SNP_ANALYZER_NS + '/' + 'a' * 41)
+        self.assertEqual(rv.status_code, 400)
+
+        # try where we get os error
+        xdir = os.path.join(self._temp_dir, nbgwas_rest.DELETE_REQUESTS,
+                            'hehe')
+        os.makedirs(xdir, mode=0o755)
+        rv = self._app.delete(nbgwas_rest.SNP_ANALYZER_NS + '/hehe')
+        self.assertEqual(rv.status_code, 500)
 
     def test_post_missing_required_parameter(self):
         pdict = {}

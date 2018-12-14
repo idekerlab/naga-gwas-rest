@@ -22,6 +22,8 @@ A GWAS association score is assigned to the genes. A molecular network is downlo
  new scores for each gene. The top hits on this list form a new subnetwork, which can be compared to a set of gold standard genes in order to evaluate the
  enrichment for previously discovered biology. 
  
+ **NOTE:** This service is experimental. The interface, implementation, and availability is subject to change.
+ 
  See https://github.com/shfong/nbgwas for details.
 """ # noqa
 
@@ -51,6 +53,11 @@ SUBMITTED_STATUS = 'submitted'
 PROCESSING_STATUS = 'processing'
 DONE_STATUS = 'done'
 ERROR_STATUS = 'error'
+
+# directory where token files named after tasks to delete
+# are stored
+DELETE_REQUESTS = 'delete_requests'
+
 RESULT_KEY = 'result'
 
 SNP_ANALYZER_NS = 'snp_analyzer'
@@ -65,7 +72,10 @@ api = Api(app, version=str(__version__),
 # need to clear out the default namespace
 api.namespaces.clear()
 
-ns = api.namespace(SNP_ANALYZER_NS, description='snp analyzer')
+ns = api.namespace(SNP_ANALYZER_NS,
+                   description='Generates GWAS association scores for Genes'
+                               ' from network deemed to be impacted by SNPS '
+                               'provided',)
 
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 
@@ -127,6 +137,14 @@ def get_done_dir():
     :return:
     """
     return os.path.join(app.config[JOB_PATH_KEY], DONE_STATUS)
+
+
+def get_delete_request_dir():
+    """
+    Gets base directory where delete request token files will be placed
+    :return:
+    """
+    return os.path.join(app.config[JOB_PATH_KEY], DELETE_REQUESTS)
 
 
 def create_task(params):
@@ -446,16 +464,36 @@ class GetTask(Resource):
         return jsonify({STATUS_RESULT_KEY: DONE_STATUS,
                        RESULT_KEY: data})
 
+    @api.doc('Creates request to delete task',
+             responses={
+                 200: 'Delete request successfully received',
+                 400: 'Invalid delete request',
+                 500: 'Internal server error'
+             })
     def delete(self, id):
         """
         Deletes task associated with {id} passed in
-
-        Currently **NOT** implemented and will always return status code
-        **503**
         """
         resp = flask.make_response()
-        resp.data = 'Currently not implemented'
-        resp.status_code = 503
+        try:
+            req_dir = get_delete_request_dir()
+            if not os.path.isdir(req_dir):
+                app.logger.debug('Creating directory: ' + req_dir)
+                os.makedirs(req_dir, mode=0o755)
+
+            cleanid = id.strip()
+            if len(cleanid) > 40 or len(cleanid) == 0:
+                resp.status_code = 400
+                return resp
+
+            with open(os.path.join(req_dir, cleanid), 'w') as f:
+                f.write(request.remote_addr)
+                f.flush()
+            resp.status_code = 200
+            return resp
+        except Exception:
+            app.logger.exception('Caught exception creating delete token')
+        resp.status_code = 500
         return resp
 
 
