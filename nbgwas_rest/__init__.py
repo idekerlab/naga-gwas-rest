@@ -22,9 +22,9 @@ A GWAS association score is assigned to the genes. A molecular network is downlo
  new scores for each gene. The top hits on this list form a new subnetwork, which can be compared to a set of gold standard genes in order to evaluate the
  enrichment for previously discovered biology. 
  
- **NOTE:** This service is experimental. The interface, implementation, and availability is subject to change.
+ **NOTE:** This service is experimental. The interface is subject to change.
  
- See https://github.com/shfong/nbgwas for details.
+ See https://github.com/shfong/nbgwas for details and to report issues.
 """ # noqa
 
 NBGWAS_REST_SETTINGS_ENV = 'NBGWAS_REST_SETTINGS'
