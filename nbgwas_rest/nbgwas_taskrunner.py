@@ -76,6 +76,8 @@ class FileBasedTask(object):
     IPADDR = 'ipaddr'
     UUID = 'uuid'
     OPTIMAL = 'optimal'
+    TASK_FILES = [nbgwas_rest.RESULT, nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM,
+                  nbgwas_rest.TASK_JSON]
 
     def __init__(self, taskdir, taskdict,
                  protein_coding_dir=None,
@@ -87,6 +89,36 @@ class FileBasedTask(object):
         self._resultdata = None
         self._protein_coding_dir = protein_coding_dir
         self._protein_coding_suffix = protein_coding_suffix
+
+    def delete_task_files(self):
+        """
+        Deletes all files and directories pertaining to task
+        on filesystem
+        :return: None upon success or str with error message
+        """
+        if self._taskdir is None:
+            return 'Task directory is None'
+
+        if not os.path.isdir(self._taskdir):
+            return ('Task directory ' + self._taskdir +
+                    ' is not a directory')
+
+        # this is a paranoid removal since we only are tossing
+        # the directory in question and files listed in TASK_FILES
+        try:
+            for entry in os.listdir(self._taskdir):
+                if entry not in FileBasedTask.TASK_FILES:
+                    logger.error(entry + ' not in files created by task')
+                    continue
+                fp = os.path.join(self._taskdir, entry)
+                if os.path.isfile(fp):
+                    os.unlink(fp)
+            os.rmdir(self._taskdir)
+            return None
+        except Exception as e:
+            logger.exception('Caught exception removing ' + self._taskdir)
+            return ('Caught exception ' + str(e) + 'trying to remove ' +
+                    self._taskdir)
 
     def save_task(self):
         """
