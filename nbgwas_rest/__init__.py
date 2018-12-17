@@ -46,6 +46,11 @@ NETWORK_DATA = 'network.data'
 LOCATION = 'Location'
 RESULT = 'result.json'
 
+
+# used in status endpoint, key
+# in json for percentage disk is full
+DISKFULL_KEY = "percent_disk_full"
+
 STATUS_RESULT_KEY = 'status'
 NOTFOUND_STATUS = 'notfound'
 UNKNOWN_STATUS = 'unknown'
@@ -514,12 +519,21 @@ class SystemStatus(Resource):
         ```Bash
         {
           "status" : "ok|error",
-          "rest_version": "1.0"
+          "rest_version": "1.0",
+          "percent_disk_full": "45"
         }
         ```
         """
+        pc_disk_full = -1
+        try:
+            s = os.statvfs(get_submit_dir())
+            pc_disk_full = int(float(s.f_blocks - s.f_bavail)/float(s.f_blocks)*100)
+        except Exception:
+            app.logger.exception('Caught exception checking disk space')
+            pc_disk_full = -1
 
         resp = jsonify({STATUS_RESULT_KEY: SystemStatus.OK_STATUS,
+                        DISKFULL_KEY: pc_disk_full,
                         REST_VERSION_KEY: __version__})
         resp.status_code = 200
         return resp
