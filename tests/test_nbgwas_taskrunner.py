@@ -383,7 +383,59 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                                             delete_temp_files=True),
                              None)
             self.assertEqual(task.get_snp_level_summary_file(), None)
+        finally:
+            shutil.rmtree(temp_dir)
 
+    def test_filebasedtask_delete_task_files(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # try where taskdir is none
+            task = FileBasedTask(None, None)
+            self.assertEqual(task.delete_task_files(),
+                             'Task directory is None')
+
+            # try where taskdir is not a directory
+            notadir = os.path.join(temp_dir, 'notadir')
+            task = FileBasedTask(notadir, None)
+            self.assertEqual(task.delete_task_files(),
+                             'Task directory ' + notadir +
+                             ' is not a directory')
+
+            # try on empty directory
+            emptydir = os.path.join(temp_dir, 'emptydir')
+            os.makedirs(emptydir, mode=0o755)
+            task = FileBasedTask(emptydir, None)
+            self.assertEqual(task.delete_task_files(), None)
+            self.assertFalse(os.path.isdir(emptydir))
+
+            # try with result, snp, and task.json files
+            valid_dir = os.path.join(temp_dir, 'yoyo')
+            os.makedirs(valid_dir, mode=0o755)
+            open(os.path.join(valid_dir, nbgwas_rest.RESULT), 'a').close()
+            open(os.path.join(valid_dir, nbgwas_rest.TASK_JSON),
+                 'a').close()
+            open(os.path.join(valid_dir,
+                              nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM),
+                 'a').close()
+
+            task = FileBasedTask(valid_dir, {})
+            self.assertEqual(task.delete_task_files(), None)
+            self.assertFalse(os.path.isdir(valid_dir))
+
+            # try where extra file causes os.rmdir to fail
+            valid_dir = os.path.join(temp_dir, 'yoyo')
+            os.makedirs(valid_dir, mode=0o755)
+            open(os.path.join(valid_dir, 'somefile'), 'a').close()
+
+            open(os.path.join(valid_dir, nbgwas_rest.RESULT), 'a').close()
+            open(os.path.join(valid_dir, nbgwas_rest.TASK_JSON),
+                 'a').close()
+            open(os.path.join(valid_dir,
+                              nbgwas_rest.SNP_LEVEL_SUMMARY_PARAM),
+                 'a').close()
+            task = FileBasedTask(valid_dir, {})
+            self.assertTrue('trying to remove ' in task.delete_task_files())
+            self.assertTrue(os.path.isdir(valid_dir))
 
         finally:
             shutil.rmtree(temp_dir)
@@ -559,3 +611,4 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             self.assertEqual(data['node2'], 0.0)
         finally:
             shutil.rmtree(temp_dir)
+
