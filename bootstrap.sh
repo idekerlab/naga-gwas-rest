@@ -82,6 +82,7 @@ EOF
 mkdir -p /var/www/nbgwas_rest/tasks/submitted
 mkdir -p /var/www/nbgwas_rest/tasks/processing
 mkdir -p /var/www/nbgwas_rest/tasks/done
+mkdir -p /var/www/nbgwas_rest/tasks/delete_requests
 
 chown -R apache.apache /var/www/nbgwas_rest/tasks
 
