@@ -8,6 +8,7 @@ import logging
 import time
 import shutil
 import json
+import glob
 
 from nbgwas import Nbgwas
 
@@ -39,6 +40,9 @@ def _parse_arguments(desc, args):
                         help='Time in seconds to wait'
                              'before looking for new'
                              'tasks')
+    parser.add_argument('--disabledelete', action='store_true',
+                        help='If set, task runner will NOT monitor '
+                             'delete requests')
     parser.add_argument('--ndexserver', default='public.ndexbio.org',
                         help='NDEx server default is public.ndexbio.org')
     parser.add_argument('--version', action='version',
@@ -542,6 +546,85 @@ class FileBasedSubmittedTaskFactory(object):
         return self._problemlist
 
 
+class DeletedFileBasedTaskFactory(object):
+    """
+    Reads filesystem for tasks that should be deleted
+    """
+    def __init__(self, taskdir):
+        """
+        Constructor
+        :param taskdir:
+        """
+        self._taskdir = taskdir
+        self._delete_req_dir = None
+        self._searchdirs = []
+        if self._taskdir is not None:
+            self._delete_req_dir = os.path.join(self._taskdir,
+                                                nbgwas_rest.DELETE_REQUESTS)
+            self._searchdirs.append(os.path.join(self._taskdir,
+                                                 nbgwas_rest.PROCESSING_STATUS))
+            self._searchdirs.append(os.path.join(self._taskdir,
+                                                 nbgwas_rest.SUBMITTED_STATUS))
+            self._searchdirs.append(os.path.join(self._taskdir,
+                                                 nbgwas_rest.DONE_STATUS))
+        else:
+            logger.error('Taskdir is None')
+
+    def get_next_task(self):
+        """
+        Gets next task that should be deleted
+        :return:
+        """
+        if self._delete_req_dir is None:
+            logger.error('Delete request dir is None')
+            return None
+        if not os.path.isdir(self._delete_req_dir):
+            logger.error(self._delete_req_dir + ' is not a directory')
+            return None
+        logger.debug('Examining ' + self._delete_req_dir +
+                     ' for delete task requests')
+        for entry in os.listdir(self._delete_req_dir):
+            fp = os.path.join(self._delete_req_dir, entry)
+            if not os.path.isfile(fp):
+                continue
+            task = self._get_task_with_id(entry)
+
+            logger.debug('Removing delete request file: ' + fp)
+            os.unlink(fp)
+            if task is None:
+                logger.info('Task ' + entry + ' not found')
+                continue
+            return task
+        return None
+
+    def _get_task_with_id(self, taskid):
+        """
+        Uses glob to look for task with id under taskdir
+        :return: FileBasedTask object or None if not found
+        """
+        for search_dir in self._searchdirs:
+            for entry in glob.glob(os.path.join(search_dir, '*', taskid)):
+                if not os.path.isdir(entry):
+                    logger.error('Found match (' + entry +
+                                 '), but its not a directory')
+                    continue
+                tjson = os.path.join(entry, nbgwas_rest.TASK_JSON)
+                if os.path.isfile(tjson):
+                    try:
+                        with open(tjson, 'r') as f:
+                            jsondata = json.load(f)
+                        return FileBasedTask(entry, jsondata)
+                    except Exception as e:
+                            logger.exception('Unable to parse json for task ' +
+                                             entry + ' going to skip json: ' +
+                                             str(e))
+                            return FileBasedTask(entry, {})
+                else:
+                    logger.error('No json for task ' + entry +
+                                 ' going to skip json')
+                    return FileBasedTask(entry, {})
+        return None
+
 class NetworkXFromNDExFactory(object):
     """Factory to get networkx object from NDEx server
     """
@@ -585,10 +668,11 @@ class NbgwasTaskRunner(object):
     def __init__(self, wait_time=30,
                  taskfactory=None,
                  networkfactory=None,
-                 ):
+                 deletetaskfactory=None):
         self._taskfactory = taskfactory
         self._wait_time = wait_time
         self._networkfactory = networkfactory
+        self._deletetaskfactory = deletetaskfactory
 
     def _get_networkx_object(self, task):
         """
@@ -659,14 +743,6 @@ class NbgwasTaskRunner(object):
         task.set_networkx_object(n_obj)
 
         result, emsg = self._run_nbgwas(task)
-
-        if result is None:
-            if emsg is None:
-                emsg = 'No result generated'
-            logger.error('Task failed ' + emsg)
-            task.move_task(nbgwas_rest.ERROR_STATUS,
-                           error_message=emsg)
-            return
 
         logger.info('Task processing completed')
         task.set_result_data(result)
@@ -760,7 +836,10 @@ class NbgwasTaskRunner(object):
         while keep_looping():
             task = self._taskfactory.get_next_task()
             if task is None:
-                time.sleep(self._wait_time)
+                # handle a delete request and only sleep
+                # if False is returned
+                if self._remove_deleted_task() is False:
+                    time.sleep(self._wait_time)
                 continue
 
             logger.debug('Found a task: ' + str(task.get_taskdir()))
@@ -773,8 +852,32 @@ class NbgwasTaskRunner(object):
                 task.move_task(nbgwas_rest.ERROR_STATUS,
                                error_message=emsg)
 
+    def _remove_deleted_task(self):
+        """
+        Looks for delete task request and handles it
+        :return: False if none found otherwise True
+        """
+        if self._deletetaskfactory is None:
+            return False
 
-def main(args):
+        try:
+            task = self._deletetaskfactory.get_next_task()
+            if task is None:
+                return False
+            if task.get_taskdir() is not None:
+                logger.info('Deleting task: ' + task.get_taskdir())
+                res = task.delete_task_files()
+                if res is not None:
+                    logger.error('Error deleting task: ' + res)
+                return True
+            return False
+        except Exception:
+            logger.exception('Caught exception looking for delete task '
+                             'requests')
+            return False
+
+
+def main(args, keep_looping=lambda: True):
     """Main entry point"""
     desc = """Runs tasks generated by NAGA REST service
 
@@ -791,12 +894,19 @@ def main(args):
         tfac = FileBasedSubmittedTaskFactory(ab_tdir,
                                              ab_pdir,
                                              theargs.protein_coding_suffix)
+        if theargs.disabledelete is True:
+            logger.info('Deletion of tasks disabled')
+            dfac = None
+        else:
+            dfac = DeletedFileBasedTaskFactory(ab_tdir)
+
         netfac = NetworkXFromNDExFactory(ndex_server=theargs.ndexserver)
         runner = NbgwasTaskRunner(taskfactory=tfac,
                                   networkfactory=netfac,
-                                  wait_time=theargs.wait_time)
+                                  wait_time=theargs.wait_time,
+                                  deletetaskfactory=dfac)
 
-        runner.run_tasks()
+        runner.run_tasks(keep_looping=keep_looping)
     except Exception:
         logger.exception("Error caught exception")
         return 2
