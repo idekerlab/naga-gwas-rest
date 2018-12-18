@@ -673,14 +673,15 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             runner = NbgwasTaskRunner(wait_time=0,
                                       deletetaskfactory=mockfac)
             res = runner._remove_deleted_task()
-            self.assertEqual(res, False)
+            self.assertEqual(res, True)
             mockfac.get_next_task.assert_called()
             task.get_taskdir.assert_called()
 
             # try where task.delete_task_files() raises Exception
             task = MagicMock()
             task.get_taskdir = MagicMock(return_value='/foo')
-            task.delete_task_files = MagicMock(side_effect=Exception('some error'))
+            task.delete_task_files = MagicMock(side_effect=Exception('some '
+                                                                     'error'))
             mockfac.get_next_task = MagicMock(return_value=task)
             runner = NbgwasTaskRunner(wait_time=0,
                                       deletetaskfactory=mockfac)
@@ -715,8 +716,6 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             mockfac.get_next_task.assert_called()
             task.get_taskdir.assert_called()
             task.delete_task_files.assert_called()
-
-
         finally:
             shutil.rmtree(temp_dir)
 
@@ -754,7 +753,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
 
             # try where we match in submit dir and there is a json file
             taskfile = os.path.join(submitdir,
-                                   nbgwas_rest.TASK_JSON)
+                                    nbgwas_rest.TASK_JSON)
             with open(taskfile, 'w') as f:
                 json.dump({nbgwas_rest.REMOTEIP_PARAM: '1.2.3.4'}, f)
                 f.flush()
@@ -777,7 +776,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                                    '4.5.5.5',
                                    '02e487ef-79df-4d99-8f22-1ff1d6d52a2a')
             os.makedirs(procdir, mode=0o755)
-            res = tfac._get_task_with_id('02e487ef-79df-4d99-8f22-1ff1d6d52a2a')
+            res = tfac._get_task_with_id('02e487ef-79df-4d99-8f22-'
+                                         '1ff1d6d52a2a')
             self.assertEqual(res.get_taskdir(), procdir)
             shutil.rmtree(procdir)
 
@@ -786,7 +786,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                                    '192.168.5.5',
                                    '02e487ef-79df-4d99-8f22-1ff1d6d52a2a')
             os.makedirs(donedir, mode=0o755)
-            res = tfac._get_task_with_id('02e487ef-79df-4d99-8f22-1ff1d6d52a2a')
+            res = tfac._get_task_with_id('02e487ef-79df-4d99-8f22-'
+                                         '1ff1d6d52a2a')
             self.assertEqual(res.get_taskdir(), donedir)
 
         finally:

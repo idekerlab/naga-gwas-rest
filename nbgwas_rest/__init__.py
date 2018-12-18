@@ -170,7 +170,7 @@ def create_task(params):
 
     # Getting network
     if SNP_LEVEL_SUMMARY_PARAM not in params or \
-        params[SNP_LEVEL_SUMMARY_PARAM] is None:
+       params[SNP_LEVEL_SUMMARY_PARAM] is None:
         raise Exception(SNP_LEVEL_SUMMARY_PARAM + ' is required')
 
     app.logger.debug('snp level summary: ' +
@@ -527,7 +527,8 @@ class SystemStatus(Resource):
         pc_disk_full = -1
         try:
             s = os.statvfs(get_submit_dir())
-            pc_disk_full = int(float(s.f_blocks - s.f_bavail)/float(s.f_blocks)*100)
+            pc_disk_full = int(float(s.f_blocks - s.f_bavail) /
+                               float(s.f_blocks)*100)
         except Exception:
             app.logger.exception('Caught exception checking disk space')
             pc_disk_full = -1

@@ -562,7 +562,8 @@ class DeletedFileBasedTaskFactory(object):
             self._delete_req_dir = os.path.join(self._taskdir,
                                                 nbgwas_rest.DELETE_REQUESTS)
             self._searchdirs.append(os.path.join(self._taskdir,
-                                                 nbgwas_rest.PROCESSING_STATUS))
+                                                 nbgwas_rest.
+                                                 PROCESSING_STATUS))
             self._searchdirs.append(os.path.join(self._taskdir,
                                                  nbgwas_rest.SUBMITTED_STATUS))
             self._searchdirs.append(os.path.join(self._taskdir,
@@ -624,6 +625,7 @@ class DeletedFileBasedTaskFactory(object):
                                  ' going to skip json')
                     return FileBasedTask(entry, {})
         return None
+
 
 class NetworkXFromNDExFactory(object):
     """Factory to get networkx object from NDEx server
@@ -809,7 +811,6 @@ class NbgwasTaskRunner(object):
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
-
         logger.debug('Extract node name and scores from node_table')
         # the data frame below is the result give the name and
         # Diffused (Log) to the user
@@ -834,12 +835,13 @@ class NbgwasTaskRunner(object):
         :return:
         """
         while keep_looping():
+
+            while self._remove_deleted_task() is True:
+                pass
+
             task = self._taskfactory.get_next_task()
             if task is None:
-                # handle a delete request and only sleep
-                # if False is returned
-                if self._remove_deleted_task() is False:
-                    time.sleep(self._wait_time)
+                time.sleep(self._wait_time)
                 continue
 
             logger.debug('Found a task: ' + str(task.get_taskdir()))
@@ -870,7 +872,7 @@ class NbgwasTaskRunner(object):
                 if res is not None:
                     logger.error('Error deleting task: ' + res)
                 return True
-            return False
+            return True
         except Exception:
             logger.exception('Caught exception looking for delete task '
                              'requests')
