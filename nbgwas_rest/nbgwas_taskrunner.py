@@ -506,6 +506,7 @@ class FileBasedSubmittedTaskFactory(object):
             logger.error(self._submitdir +
                          ' does not exist or is not a directory')
             return None
+        logger.debug('Examining ' + self._submitdir + ' for new tasks')
         for entry in os.listdir(self._submitdir):
             fp = os.path.join(self._submitdir, entry)
             if not os.path.isdir(fp):
@@ -590,7 +591,7 @@ class DeletedFileBasedTaskFactory(object):
                 continue
             task = self._get_task_with_id(entry)
 
-            logger.debug('Removing delete request file: ' + fp)
+            logger.info('Removing delete request file: ' + fp)
             os.unlink(fp)
             if task is None:
                 logger.info('Task ' + entry + ' not found')
@@ -763,10 +764,10 @@ class NbgwasTaskRunner(object):
                  (None, 'str containing error message') or (None, None)
 
         """
-        logger.debug('Creating Nbgwas object')
+        logger.info('Creating Nbgwas object')
         g = Nbgwas()
 
-        logger.debug('Creating NBgwas.Snps object')
+        logger.info('Creating NBgwas.Snps object')
         g.snps.from_files(
             task.get_snp_level_summary_file(),
             task.get_protein_coding_file(),
@@ -778,50 +779,50 @@ class NbgwasTaskRunner(object):
                        'index_col': 0}
         )
 
-        logger.debug('Assigning SNPS to genes')
+        logger.info('Assigning SNPS to genes')
         g.genes = g.snps.assign_snps_to_genes(window_size=task.get_window(),
                                               to_Gene=True)
 
-        logger.debug('Converting to head using method: ' +
+        logger.info('Converting to head using method: ' +
                      NbgwasTaskRunner.BINARIZE_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.BINARIZE_HEAT_METHOD,
                                 name=NbgwasTaskRunner.BINARIZED_HEAT)
 
-        logger.debug('2nd converting to head using method: ' +
+        logger.info('2nd converting to head using method: ' +
                      NbgwasTaskRunner.NEG_LOG_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
 
         g.network = task.get_networkx_object()
 
-        logger.debug('map to node table')
+        logger.info('map to node table')
         g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
                                      NbgwasTaskRunner.NEGATIVE_LOG])
 
-        logger.debug('Running diffuse ')
+        logger.info('Running diffuse ')
         g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
                   node_attribute=NbgwasTaskRunner.BINARIZED_HEAT,
                   result_name=NbgwasTaskRunner.DIFFUSED_BINARIZED)
 
-        logger.debug('Running diffuse 2')
+        logger.info('Running diffuse 2')
 
         g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
-        logger.debug('Extract node name and scores from node_table')
+        logger.info('Extract node name and scores from node_table')
         # the data frame below is the result give the name and
         # Diffused (Log) to the user
         unsortdf = g.network.node_table[[g.network.node_name,
                                          NbgwasTaskRunner.DIFFUSED_LOG]]
 
-        logger.debug('Sort results by scores')
+        logger.info('Sort results by scores')
         dframe = unsortdf.sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
                                       ascending=False)
 
-        logger.debug('Put results into dict()')
+        logger.info('Put results into dict()')
         result = {gene: score for gene, score in dframe.values}
         return result, None
 
@@ -844,7 +845,7 @@ class NbgwasTaskRunner(object):
                 time.sleep(self._wait_time)
                 continue
 
-            logger.debug('Found a task: ' + str(task.get_taskdir()))
+            logger.info('Found a task: ' + str(task.get_taskdir()))
             try:
                 self._process_task(task)
             except Exception as e:
