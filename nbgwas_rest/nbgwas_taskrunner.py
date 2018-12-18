@@ -748,13 +748,16 @@ class NbgwasTaskRunner(object):
         result = {gene: score for gene, score in dframe.values}
         return result, None
 
-    def run_tasks(self):
+    def run_tasks(self, keep_looping=lambda: True):
         """
         Main entry point, this function loops looking for
         tasks to run.
+        :param keep_looping: Function that should return True to
+                             denote this method should keep waiting
+                             for new Tasks or False to exit
         :return:
         """
-        while True:
+        while keep_looping():
             task = self._taskfactory.get_next_task()
             if task is None:
                 time.sleep(self._wait_time)
