@@ -26,19 +26,18 @@ install:
   - conda install -y -c conda-forge python-igraph
   - conda install -y -c anaconda flask
   - conda install -y -c conda-forge flask-restplus
-  - git clone https://github.com/ndexbio/ndex2-client.git
-      pushd ndex2-client
-      git checkout chrisdev
-      python setup.py bdist_wheel
-      pip install dist/ndex2-*whl
-      popd
-  - git clone https://github.com/shfong/nbgwas.git
-      pushd nbgwas
-      git checkout chrisdev
-      rm -rf app
-      python setup.py build
-      python setup.py install
-      popd
+  - git clone https://github.com/ndexbio/ndex2-client.git;
+      pushd ndex2-client;
+      git checkout chrisdev;
+      python setup.py bdist_wheel;
+      pip install dist/ndex2-*whl;
+      popd;
+  - git clone https://github.com/shfong/nbgwas.git;
+      pushd nbgwas;
+      git checkout chrisdev;
+      python setup.py build;
+      python setup.py install;
+      popd;
   - pip install coveralls
   - pip install .
 # command to run tests
