@@ -612,3 +612,36 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_run_tasks_no_work(self):
+        mocktaskfac = MagicMock()
+        mocktaskfac.get_next_task = MagicMock(side_effect=[None, None])
+        runner = NbgwasTaskRunner(wait_time=0, taskfactory=mocktaskfac)
+        loop = MagicMock()
+        loop.side_effect = [True, True, False]
+        runner.run_tasks(loop)
+        self.assertEqual(loop.call_count, 3)
+        self.assertEqual(mocktaskfac.get_next_task.call_count, 2)
+
+    def test_run_tasks_task_raises_exception(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            mocktaskfac = MagicMock()
+            mocktask = MagicMock()
+            mocktask.get_taskdir = MagicMock(return_value=temp_dir)
+            mocktask.move_task = MagicMock()
+            mocktaskfac.get_next_task.side_effect = [None, mocktask]
+
+            mock_net_fac = MagicMock()
+            mock_net_fac. \
+                get_networkx_object = MagicMock(side_effect=Exception('foo'))
+
+            runner = NbgwasTaskRunner(wait_time=0,
+                                      taskfactory=mocktaskfac,
+                                      networkfactory=mock_net_fac)
+            loop = MagicMock()
+            loop.side_effect = [True, True, False]
+            runner.run_tasks(loop)
+            self.assertEqual(loop.call_count, 3)
+            self.assertEqual(mocktaskfac.get_next_task.call_count, 2)
+        finally:
+            shutil.rmtree(temp_dir)
