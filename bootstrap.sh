@@ -72,6 +72,8 @@ git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/idekerlab/n
 pushd nbgwas_rest
 make dist
 pip install dist/nbgwas*whl
+# copy the http configuration file
+cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
 popd
 
 # install latest nodejs and npm
@@ -87,10 +89,6 @@ mv -f package.tmp package.json
 npm run build
 cp -a build/* /var/www/html/.
 popd
-
-
-# copy the http configuration file
-cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
 
 mkdir /var/www/nbgwas_rest
 
