@@ -4,7 +4,7 @@
 yum install -y epel-release git gzip tar
 yum install -y wget bzip2 bzip2-utils bzip2-devel gcc gcc-c++ hdf5 hdf5-devel 
 yum install -y httpd httpd-devel 
-yum install -y lzo lzo-devel cmake
+yum install -y lzo lzo-devel cmake screen
 yum install -y policycoreutils-python setroubleshoot
 
 # open port 5000 for http
@@ -74,6 +74,10 @@ make dist
 pip install dist/nbgwas*whl
 # copy the http configuration file
 cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
+cp -r nagadata /var/www/html/.
+pushd /var/www/html/nagadata
+gunzip *.txt
+popd
 popd
 
 # install latest nodejs and npm
@@ -115,6 +119,8 @@ mkdir -p /var/www/nbgwas_rest/tasks/submitted
 mkdir -p /var/www/nbgwas_rest/tasks/processing
 mkdir -p /var/www/nbgwas_rest/tasks/done
 mkdir -p /var/www/nbgwas_rest/tasks/delete_requests
+mkdir -p /var/www/nbgwas_rest/tasks/protein_coding_dir
+cp /var/www/html/hg*txt /var/www/nbgwas_rest/tasks/protein_coding_dir/.
 
 chown -R apache.apache /var/www/nbgwas_rest/tasks
 
@@ -127,7 +133,11 @@ restorecon -Rv /var/www/nbgwas_rest/tasks
 
 service httpd start
 
-
+echo "To process jobs connect via vagrant ssh and run the following as vagrant user or root:"
+echo "screen"
+echo "sudo -u apache /bin/bash"
+echo "nbgwas_taskrunner.py -vvv --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
+echo "# Type <Ctrl>-a d to exit screen and screen -r to resume"
 
 echo "Visit http://localhost:8081/rest/v1 in your browser"
 
