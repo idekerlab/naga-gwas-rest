@@ -75,9 +75,9 @@ pip install dist/nbgwas*whl
 # copy the http configuration file
 cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
 cp -r nagadata /var/www/html/.
-pushd /var/www/html/nagadata
-gunzip *.txt
-popd
+gunzip /var/www/html/nagadata/*.gz
+gunzip /var/www/html/nagadata/protein_coding/*.gz
+gunzip /var/www/html/nagadata/example_output/*.gz
 popd
 
 # install latest nodejs and npm
@@ -120,7 +120,7 @@ mkdir -p /var/www/nbgwas_rest/tasks/processing
 mkdir -p /var/www/nbgwas_rest/tasks/done
 mkdir -p /var/www/nbgwas_rest/tasks/delete_requests
 mkdir -p /var/www/nbgwas_rest/tasks/protein_coding_dir
-cp /var/www/html/hg*txt /var/www/nbgwas_rest/tasks/protein_coding_dir/.
+cp /var/www/html/nagadata/protein_coding/hg*txt /var/www/nbgwas_rest/tasks/protein_coding_dir/.
 
 chown -R apache.apache /var/www/nbgwas_rest/tasks
 
@@ -134,10 +134,13 @@ restorecon -Rv /var/www/nbgwas_rest/tasks
 service httpd start
 
 echo "To process jobs connect via vagrant ssh and run the following as vagrant user or root:"
+echo ""
 echo "screen"
 echo "sudo -u apache /bin/bash"
-echo "nbgwas_taskrunner.py -vvv --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
+echo 'export PATH=/opt/miniconda3/bin:$PATH'
+echo "nbgwas_taskrunner.py -vv --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
 echo "# Type <Ctrl>-a d to exit screen and screen -r to resume"
-
+echo ""
+echo ""
 echo "Visit http://localhost:8081/rest/v1 in your browser"
 
