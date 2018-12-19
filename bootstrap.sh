@@ -81,11 +81,13 @@ curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
 yum install -y nodejs
 
 # install NBGWAS-Frontend
-git clone -b 'gh-pages' --single-branch --depth 1 https://github.com/BrettJSettle/NBGWAS-Frontend.git
+git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/BrettJSettle/NBGWAS-Frontend.git
 pushd NBGWAS-Frontend
 npm install .
-cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost\"/" > package.tmp
+cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost:8081\"/" > package.tmp
 mv -f package.tmp package.json
+cat src/data.js | sed "s/endpoint:.*/endpoint: \"http:\/\/localhost:8081\/rest\/v1\/snp_analyzer\",/g" > data.js.tmp
+mv -f data.js.tmp src/data.js
 npm run build
 cp -a build/* /var/www/html/.
 popd
@@ -124,6 +126,8 @@ semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/nbgwas_rest/tasks(/.*)?
 restorecon -Rv /var/www/nbgwas_rest/tasks
 
 service httpd start
+
+
 
 echo "Visit http://localhost:8081/rest/v1 in your browser"
 
