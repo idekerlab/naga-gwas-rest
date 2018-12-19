@@ -648,6 +648,7 @@ class NetworkXFromNDExFactory(object):
         if ndex_uuid is None:
             logger.error('UUID passed in is None')
             return None
+        logger.info('Retreiving network with uuid:  ' + ndex_uuid)
         cxnet = create_nice_cx_from_server(server=self._ndex_server,
                                            uuid=ndex_uuid)
         return cxnet.to_networkx()
@@ -719,11 +720,11 @@ class NbgwasTaskRunner(object):
             logger.error("None returned trying to get network")
             return None
 
-        logger.debug('Generating name map')
+        logger.info('Generating name map')
         name_map = {i: j[NbgwasTaskRunner.NDEX_NAME]
                     for i, j in dG.node.items()}
 
-        logger.debug('Calling networkx.relabel_nodes with name map')
+        logger.info('Calling networkx.relabel_nodes with name map')
         return nx.relabel_nodes(dG, name_map)
 
     def _process_task(self, task, delete_temp_files=True):
