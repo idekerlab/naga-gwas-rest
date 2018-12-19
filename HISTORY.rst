@@ -2,7 +2,7 @@
 History
 =======
 
-0.4.0 (2018-12-18)
+0.4.0 (2018-12-19)
 ------------------
 
 * Enabled DELETE rest endpoint `issue #16 <https://github.com/idekerlab/nbgwas_rest/issues/16>`_
