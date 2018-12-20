@@ -27,19 +27,10 @@ Dependencies to run
 -------------------
 
  * nbgwas_
- * `requests <https://pypi.org/project/requests/>`_
- * `networkx <https://pypi.org/project/networkx/>`_
- * `numpy <https://pypi.org/project/numpy/>`_
- * `matplotlib <https://pypi.org/project/matplotlib/>`_
- * `pandas <https://pypi.org/project/pandas/>`_
+ * `networkx 1.11 <https://pypi.org/project/networkx/>`_
  * `ndex2 <https://pypi.org/project/ndex2/>`_
  * `flask <https://pypi.org/project/flask/>`_
  * `flask-restplus <https://pypi.org/project/flast-restplus>`_
- * `scipy <https://www.scipy.org/>`_
- * `seaborn <https://seaborn.pydata.org/>`_
- * `tables <https://pypi.org/project/tables/>`_
- * `python-igraph <http://igraph.org/python/>`_
- * `py2cytoscape <https://pypi.org/project/py2cytoscape/>`_
 
 Additional dependencies to build
 --------------------------------
