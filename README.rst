@@ -75,33 +75,34 @@ Running server in development mode
 Example usage of service
 ------------------------
 
-Below is a small quick and dirty script that leverages the nbgwas_rest service to run nbgwas on a tab delimited file passed into the script on the command line
+Below is a small quick and dirty script that leverages the nbgwas_rest service to run NAGA on the compressed **nagadata/schizophrenia.txt.gz** passed into the script on the command line
 
 .. code:: bash
 
    #!/usr/bin/env python
 
    import sys
+   import gzip
    import requests
 
-   # pass 3 column tab delimited file to this script
+   # pass the gzipped schizophrenia.txt.gz
    networkfile = sys.argv[1]
 
    data_dict = {}
 
-   data_dict['seeds']='geneone,genetwo'
-   data_dict['alpha']=0.2
+   data_dict['protein_coding']='hg18'
+   data_dict['window']=10000
    files = {'network': open(networkfile, 'rb')}
    url = 'http://localhost:5000/snp_analyzer'
    r = requests.post(url, data=data_dict, files=files)
    sys.stdout.write(str(r.text) + '\n')
    sys.stdout.write(str(r.status_code) + '\n')
 
-Assuming the above is saved in a file named foo.py
+Assuming the above is saved in a file named **foo.py** and run from base directory of this source tree
 
 .. code:: bash
 
-  ./foo.py mytsv.tsv
+  ./foo.py nagadata/schizophrenia.txt.gz
 
 
 Bugs
