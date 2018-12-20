@@ -16,6 +16,8 @@ REST service for `Network Assisted Genomic Analysis (NAGA) <https://github.com/s
 
 `For more information please click here to visit our wiki <https://github.com/idekerlab/nbgwas_rest/wiki>`_
 
+This service is currently running here: http://nbgwas.ucsd.edu
+
 Compatibility
 -------------
 
@@ -75,35 +77,83 @@ Running server in development mode
 Example usage of service
 ------------------------
 
-Below is a small quick and dirty script that leverages the nbgwas_rest service to run NAGA on the compressed **nagadata/schizophrenia.txt.gz** passed into the script on the command line
+Below is a small script that leverages the nbgwas_rest service to run NAGA on the
+compressed **nagadata/schizophrenia.txt.gz** passed into the script on the command line
 
 .. code:: bash
 
-   #!/usr/bin/env python
+    #!/usr/bin/env python
 
-   import sys
-   import gzip
-   import requests
+    import sys
+    import gzip
+    import time
+    import requests
 
-   # pass the gzipped schizophrenia.txt.gz
-   networkfile = sys.argv[1]
+    # pass the gzipped schizophrenia.txt.gz
+    networkfile = sys.argv[1]
 
-   data_dict = {}
+    # set parameters
+    data_dict = {}
+    data_dict['protein_coding']='hg18'
+    data_dict['window']=10000
+    data_dict['ndex']='f93f402c-86d4-11e7-a10d-0ac135e8bacf'
 
-   data_dict['protein_coding']='hg18'
-   data_dict['window']=10000
-   files = {'network': open(networkfile, 'rb')}
-   url = 'http://localhost:5000/snp_analyzer'
-   r = requests.post(url, data=data_dict, files=files)
-   sys.stdout.write(str(r.text) + '\n')
-   sys.stdout.write(str(r.status_code) + '\n')
+    # set snp file
+    files = {'snp_level_summary': gzip.open(networkfile, 'rb')}
+    url = 'http://nbgwas.ucsd.edu/rest/v1/snp_analyzer'
+    r = requests.post(url, data=data_dict, files=files,
+                      timeout=30)
+
+    # If successful the previous POST will return 202
+    if r.status_code != 202:
+        sys.stderr.write('Submission failed with code: ' + str(r.status_code) +
+                         '\n')
+        sys.stderr.write('Message: ' + str(r.text) + '\n')
+        sys.exit(1)
+
+    # If successful Location will be set to a URL that can
+    # be polled for result
+    if 'Location' not in r.headers:
+        sys.stderr.write('Expected Location in Header, ' +
+                         'but its not there: ' + str(r.headers) + '\n')
+        sys.exit(2)
+
+    resulturl = r.headers['Location']
+    getres = requests.get(resulturl, timeout=30)
+    json_res = getres.json()
+    while getres.status_code != 200 or json_res['status'] == 'submitted' or json_res['status'] == 'processing':
+       sys.stderr.write('.')
+       sys.stderr.flush()
+       time.sleep(5)
+       getres = requests.get(resulturl, timeout=30)
+       json_res = getres.json()
+
+    sys.stderr.write('\n')
+    sys.stdout.write(str(json_res) + '\n')
 
 Assuming the above is saved in a file named **foo.py** and run from base directory of this source tree
+
 
 .. code:: bash
 
   ./foo.py nagadata/schizophrenia.txt.gz
 
+
+Example output:
+
+.. code:: bash
+
+   {'result': {'A1BG': 1.818739214334769, 'A1CF': 2.9679830980888413,
+   'A2M': 3.9294999566765174, 'A2ML1': 1.4379620790934335, 'A3GALT2': 1.9918435374785632,
+   'A4GALT': 1.8734641163972634, 'A4GNT': 1.335302470858104, 'AAAS': 2.384799543926567,
+   'AACS': 2.965792987307328, 'AADAC': 1.455957465785784, 'AADACL2': 1.0156608351922358,
+   'AADACL3': 0.895944981993654, 'AADACL4': 1.2458363441128992, 'AADAT': 2.689141678947707,
+   'AAED1': 0.12364477699188797, 'AAGAB': 0.14237051805828474, 'AAK1': 5.652340641567231,
+   'AAMDC': 0.1647736242197245, 'AAMP': 3.2927511707526884, 'AANAT': 5.654764562774087,
+   'AAR2': 0.9427896961129361,
+   .
+   .
+   , 'status': 'done'}
 
 Bugs
 -----
