@@ -2,6 +2,12 @@
 History
 =======
 
+0.4.1 (2018-12-20)
+------------------
+
+* Replace Association with Analysis in REST service description bug
+  `issue #19 <https://github.com/idekerlab/nbgwas_rest/issues/19>`_
+
 0.4.0 (2018-12-19)
 ------------------
 
