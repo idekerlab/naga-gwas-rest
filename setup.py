@@ -20,40 +20,20 @@ with open(os.path.join('nbgwas_rest', '__init__.py')) as ver_file:
 
 requirements = [
     'argparse',
-    'requests',
     'networkx==1.11', #ndex2 requires networks 1.11
-    'pandas',
     'ndex2',
     'flask',
-    'flask-restplus',
-    'numpy',
-    'matplotlib',
-    'pandas',
-    'scipy',
-    'seaborn',
-    'tables', #For hdf5 reads
-    'python-igraph',
-    'py2cytoscape'
+    'flask-restplus'
 ]
 
 setup_requirements = [ ]
 
 test_requirements = [
     'argparse',
-    'requests',
     'networkx==1.11', #ndex2 requires networks 1.11
-    'pandas',
     'ndex2',
     'flask',
     'flask-restplus',
-    'numpy',
-    'matplotlib',
-    'pandas',
-    'scipy',
-    'seaborn',
-    'tables',  # For hdf5 reads
-    'python-igraph',
-    'py2cytoscape',
     'unittest2'
 ]
 
