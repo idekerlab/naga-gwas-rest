@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 import os
 import shutil
@@ -71,7 +71,7 @@ REST_VERSION_KEY = 'rest_version'
 ALGO_VERSION_KEY = 'algorithm_version'
 
 api = Api(app, version=str(__version__),
-          title='Network Assisted Genomic Association (NAGA) ',
+          title='Network Assisted Genomic Analysis (NAGA) ',
           description=desc, example='put example here')
 
 # need to clear out the default namespace
@@ -343,10 +343,10 @@ post_parser.add_argument(SNP_LEVEL_SUMMARY_COL_LABEL_PARAM, type=str,
                          location='form')
 
 
-@api.doc('Runs Network Assisted Genomic Association')
+@api.doc('Runs Network Assisted Genomic Analysis')
 @ns.route('/', strict_slashes=False)
 class TaskBasedRestApp(Resource):
-    @api.doc('Runs Network Assisted Genomic Association',
+    @api.doc('Runs Network Assisted Genomic Analysis',
              responses={
                  202: 'The task was successfully submitted to the service. '
                       'Visit the URL'
