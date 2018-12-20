@@ -60,8 +60,11 @@ It is highly reccommended one use `Anaconda <https://www.anaconda.com/>`_ for Py
   cd nbgwas_rest
   make install
 
-Running server in development mode
+Running service in development mode
 ----------------------------------
+
+
+**NOTE:** Example below runs the REST service and not the task runner.
 
 .. code:: bash
 
@@ -73,6 +76,10 @@ Running server in development mode
 
   # NOTE: To have tasks processed nbgwas_taskrunner.py must be started in
   # another terminal
+
+
+`Click here for information on launching service via Vagrant VM <https://github.com/idekerlab/nbgwas_rest/wiki/NAGA-REST-under-Vagrant-Virtual-Machine>`_
+
 
 Example usage of service
 ------------------------
