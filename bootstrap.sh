@@ -59,7 +59,7 @@ pip install biothings_client
 # install ndex2-client
 pip install ndex2
 
-pip install naga==0.4.1
+pip install naga-gwas==0.4.1
 
 # install nbgwas_rest
 # TODO this should install the version in /vagrant
