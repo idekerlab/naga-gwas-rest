@@ -89,6 +89,7 @@ ns = api.namespace(SNP_ANALYZER_NS,
 
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 
+NAGA_VERSION = 'nagaversion'
 ALPHA_PARAM = 'alpha'
 NETWORK_PARAM = 'network'
 NDEX_PARAM = 'ndex'

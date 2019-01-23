@@ -160,6 +160,19 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                          None)
         self.assertEqual(task._get_value_from_snp_column_label_string(3), None)
 
+    def test_filebasedtask_set_naga_version(self):
+        task = FileBasedTask(None, None)
+        task.set_naga_version()
+        tdict = task.get_taskdict()
+        self.assertTrue(nbgwas_rest.NAGA_VERSION in tdict)
+        self.assertTrue(tdict[nbgwas_rest.NAGA_VERSION] is not None)
+
+        task = FileBasedTask(None, {'hi': 'how'})
+        task.set_naga_version(nagaversion='123')
+        tdict = task.get_taskdict()
+        self.assertEqual(tdict[nbgwas_rest.NAGA_VERSION], '123')
+        self.assertEqual(tdict['hi'], 'how')
+
     def test_filebasedtask_get_protein_coding_file_no_protein_coding_dir(self):
         temp_dir = tempfile.mkdtemp()
         try:
@@ -613,6 +626,10 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
 
             self.assertEqual(data['node1'], 0.0)
             self.assertEqual(data['node2'], 0.0)
+            tdict = task.get_taskdict()
+            self.assertTrue(nbgwas_rest.NAGA_VERSION in tdict)
+            self.assertTrue(tdict[nbgwas_rest.NAGA_VERSION] is not None)
+
         finally:
             shutil.rmtree(temp_dir)
 

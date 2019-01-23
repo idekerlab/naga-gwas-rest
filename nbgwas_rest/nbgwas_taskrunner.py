@@ -11,7 +11,7 @@ import json
 import glob
 
 from nbgwas import Nbgwas
-
+from nbgwas import version
 import nbgwas_rest
 import networkx as nx
 from ndex2 import create_nice_cx_from_server
@@ -93,6 +93,22 @@ class FileBasedTask(object):
         self._resultdata = None
         self._protein_coding_dir = protein_coding_dir
         self._protein_coding_suffix = protein_coding_suffix
+
+    def set_naga_version(self, nagaversion=None):
+        """
+        Sets version of Naga used for processing.
+        :param nagaversion: Version of Naga used on processing, if None,
+                        value is parsed from nbgwas.__version__ field
+        :type string:
+        """
+        if self._taskdict is None:
+            self._taskdict = {}
+
+        if nagaversion is None:
+            theversion = version.__version__
+        else:
+            theversion = str(nagaversion)
+        self._taskdict[nbgwas_rest.NAGA_VERSION] = theversion
 
     def delete_task_files(self):
         """
@@ -750,6 +766,7 @@ class NbgwasTaskRunner(object):
 
         logger.info('Task processing completed')
         task.set_result_data(result)
+        task.set_naga_version()
         task.save_task()
         task.move_task(nbgwas_rest.DONE_STATUS,
                        delete_temp_files=delete_temp_files)
