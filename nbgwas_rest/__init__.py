@@ -433,7 +433,8 @@ class GetTask(Resource):
         {
           "status" : "done",
           "result" : { "GENE1": SCORE, "GENE2", SCORE2 }
-          "parameters" : { "protein_coding": "hg18", "ndex": "f93.." }
+          "parameters" : { "protein_coding": "hg18", "ndex": "f93..",
+                           "nagaversion": "0.4.1", ...}
         }
         ```
         """
