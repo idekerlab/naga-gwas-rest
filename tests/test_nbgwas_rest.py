@@ -236,6 +236,7 @@ class TestNbgwas_rest(unittest.TestCase):
         os.makedirs(task_dir, mode=0o755)
         rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.PARAMETERS_KEY], None)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.SUBMITTED_STATUS)
         self.assertEqual(rv.status_code, 200)
@@ -247,6 +248,7 @@ class TestNbgwas_rest(unittest.TestCase):
         os.makedirs(task_dir, mode=0o755)
         rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.PARAMETERS_KEY], None)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.PROCESSING_STATUS)
         self.assertEqual(rv.status_code, 200)
@@ -258,6 +260,7 @@ class TestNbgwas_rest(unittest.TestCase):
         os.makedirs(task_dir, mode=0o755)
         rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.PARAMETERS_KEY], None)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.ERROR_STATUS)
         self.assertEqual(rv.status_code, 500)
@@ -276,6 +279,7 @@ class TestNbgwas_rest(unittest.TestCase):
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.DONE_STATUS)
+        self.assertEqual(data[nbgwas_rest.PARAMETERS_KEY], None)
         self.assertEqual(data[nbgwas_rest.RESULT_KEY]['hello'], 'there')
         self.assertEqual(rv.status_code, 200)
 
@@ -290,13 +294,17 @@ class TestNbgwas_rest(unittest.TestCase):
             f.flush()
         tfile = os.path.join(task_dir, nbgwas_rest.TASK_JSON)
         with open(tfile, 'w') as f:
-            f.write('{"task": "yo"}')
+            f.write('{"task": "yo",')
+            f.write(' "remoteip": "45.67.54.33"}')
             f.flush()
 
         rv = self._app.get(nbgwas_rest.SNP_ANALYZER_NS + '/qazxsw')
         data = json.loads(rv.data)
+        self.assertEqual(data[nbgwas_rest.PARAMETERS_KEY]['task'], 'yo')
+        self.assertTrue(nbgwas_rest.REMOTEIP_PARAM not in data[nbgwas_rest.PARAMETERS_KEY])
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.DONE_STATUS)
+
         self.assertEqual(data[nbgwas_rest.RESULT_KEY]['hello'], 'there')
         self.assertEqual(rv.status_code, 200)
 
