@@ -22,6 +22,7 @@ requirements = [
     'argparse',
     'networkx==1.11', #ndex2 requires networks 1.11
     'ndex2',
+    'naga-gwas',
     'flask',
     'flask-restplus'
 ]
