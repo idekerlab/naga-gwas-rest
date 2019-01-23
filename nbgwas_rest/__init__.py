@@ -417,6 +417,8 @@ class GetTask(Resource):
         ```Bash
         {
           "status" : "notfound|submitted|processing|error"
+          "parameters" : { "protein_coding": "hg18", "ndex": "f93.." }
+
         }
         ```
 
@@ -430,6 +432,7 @@ class GetTask(Resource):
         {
           "status" : "done",
           "result" : { "GENE1": SCORE, "GENE2", SCORE2 }
+          "parameters" : { "protein_coding": "hg18", "ndex": "f93.." }
         }
         ```
         """
@@ -456,7 +459,8 @@ class GetTask(Resource):
                             basedir=get_done_dir())
 
         if taskpath is None:
-            resp = jsonify({STATUS_RESULT_KEY: NOTFOUND_STATUS})
+            resp = jsonify({STATUS_RESULT_KEY: NOTFOUND_STATUS,
+                            PARAMETERS_KEY: None})
             resp.status_code = 410
             return resp
 

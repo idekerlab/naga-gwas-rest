@@ -227,6 +227,7 @@ class TestNbgwas_rest(unittest.TestCase):
         data = json.loads(rv.data)
         self.assertEqual(data[nbgwas_rest.STATUS_RESULT_KEY],
                          nbgwas_rest.NOTFOUND_STATUS)
+        self.assertEqual(data[nbgwas_rest.PARAMETERS_KEY], None)
         self.assertEqual(rv.status_code, 410)
 
     def test_get_id_found_in_submitted_status(self):
