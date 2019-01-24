@@ -801,12 +801,12 @@ class NbgwasTaskRunner(object):
         g.genes = g.snps.assign_snps_to_genes(window_size=task.get_window(),
                                               to_Gene=True)
 
-        logger.info('Converting to head using method: ' +
+        logger.info('Converting to heat using method: ' +
                      NbgwasTaskRunner.BINARIZE_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.BINARIZE_HEAT_METHOD,
                                 name=NbgwasTaskRunner.BINARIZED_HEAT)
 
-        logger.info('2nd converting to head using method: ' +
+        logger.info('2nd converting to heat using method: ' +
                      NbgwasTaskRunner.NEG_LOG_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
@@ -830,19 +830,42 @@ class NbgwasTaskRunner(object):
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
-        logger.info('Extract node name and scores from node_table')
-        # the data frame below is the result give the name and
-        # Diffused (Log) to the user
-        unsortdf = g.network.node_table[[g.network.node_name,
-                                         NbgwasTaskRunner.DIFFUSED_LOG]]
+        binheat = self._get_dataframe_of_column(g.network.node_table,
+                                                g.network.node_name,
+                                                NbgwasTaskRunner.BINARIZED_HEAT)
 
-        logger.info('Sort results by scores')
-        dframe = unsortdf.sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
-                                      ascending=False)
+        neglogheat = self._get_dataframe_of_column(g.network.node_table,
+                                                   g.network.node_name,
+                                                   NbgwasTaskRunner.NEGATIVE_LOG)
 
-        logger.info('Put results into dict()')
-        result = {gene: score for gene, score in dframe.values}
+        diffbinheat = self._get_dataframe_of_column(g.network.node_table,
+                                                    g.network.node_name,
+                                                    NbgwasTaskRunner.DIFFUSED_BINARIZED)
+
+        finalheat = self._get_dataframe_of_column(g.network.node_table,
+                                                  g.network.node_name,
+                                                  NbgwasTaskRunner.DIFFUSED_LOG)
+
+        result = {nbgwas_rest.FINALHEAT_RESULT: finalheat,
+                  nbgwas_rest.DIFF_BIN_RESULT: diffbinheat,
+                  nbgwas_rest.BINARIZEDHEAT: binheat,
+                  nbgwas_rest.NEG_LOG: neglogheat}
         return result, None
+
+    def _get_dataframe_of_column(self, node_table, node_name, column):
+        """
+
+        :param node_table:
+        :param column:
+        :return:
+        """
+        unsortdf = node_table[[node_name, column]]
+
+        logger.info('Sort diffused binarized results by scores')
+        dframe = unsortdf.sort_values(by=column,
+                                          ascending=False)
+
+        return {gene: score for gene, score in dframe.values}
 
     def run_tasks(self, keep_looping=lambda: True):
         """

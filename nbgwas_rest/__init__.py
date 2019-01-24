@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '1.0.0a2'
+__version__ = '1.0.0a3'
 
 import os
 import shutil
@@ -111,6 +111,11 @@ PCNET_UUID = 'f93f402c-86d4-11e7-a10d-0ac135e8bacf'
 PROTEIN_CODING_PARAM = 'protein_coding'
 
 SNP_ANALYZER_TASK = 'snpanalyzer'
+
+FINALHEAT_RESULT = 'finalheat'
+BINARIZEDHEAT = 'binarizedheat'
+NEG_LOG = 'negativelog'
+DIFF_BIN_RESULT = 'diffusedbinarized'
 
 uuid_counter = 1
 
