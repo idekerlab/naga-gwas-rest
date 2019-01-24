@@ -117,6 +117,8 @@ BINARIZEDHEAT = 'binarizedheat'
 NEG_LOG = 'negativelog'
 DIFF_BIN_RESULT = 'diffusedbinarized'
 
+RESULTKEY_KEY = 'resultkey'
+RESULTVALUE_KEY = 'resultvalue'
 uuid_counter = 1
 
 

@@ -830,42 +830,39 @@ class NbgwasTaskRunner(object):
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
-        binheat = self._get_dataframe_of_column(g.network.node_table,
-                                                g.network.node_name,
-                                                NbgwasTaskRunner.BINARIZED_HEAT)
-
-        neglogheat = self._get_dataframe_of_column(g.network.node_table,
-                                                   g.network.node_name,
-                                                   NbgwasTaskRunner.NEGATIVE_LOG)
-
-        diffbinheat = self._get_dataframe_of_column(g.network.node_table,
-                                                    g.network.node_name,
-                                                    NbgwasTaskRunner.DIFFUSED_BINARIZED)
-
-        finalheat = self._get_dataframe_of_column(g.network.node_table,
-                                                  g.network.node_name,
-                                                  NbgwasTaskRunner.DIFFUSED_LOG)
-
-        result = {nbgwas_rest.FINALHEAT_RESULT: finalheat,
-                  nbgwas_rest.DIFF_BIN_RESULT: diffbinheat,
-                  nbgwas_rest.BINARIZEDHEAT: binheat,
-                  nbgwas_rest.NEG_LOG: neglogheat}
+        result = self._get_dataframe_of_column(g.network.node_table,
+                                               [g.network.node_name,
+                                                NbgwasTaskRunner.BINARIZED_HEAT,
+                                                NbgwasTaskRunner.NEGATIVE_LOG,
+                                                NbgwasTaskRunner.DIFFUSED_BINARIZED,
+                                                NbgwasTaskRunner.DIFFUSED_LOG],
+                                               [nbgwas_rest.BINARIZEDHEAT,
+                                                nbgwas_rest.NEG_LOG,
+                                                nbgwas_rest.DIFF_BIN_RESULT,
+                                                nbgwas_rest.FINALHEAT_RESULT],
+                                               NbgwasTaskRunner.DIFFUSED_LOG)
         return result, None
 
-    def _get_dataframe_of_column(self, node_table, node_name, column):
+    def _get_dataframe_of_column(self, node_table, column_list,
+                                 column_label_list, sort_column):
         """
 
         :param node_table:
         :param column:
         :return:
         """
-        unsortdf = node_table[[node_name, column]]
+        unsortdf = node_table[column_list]
 
         logger.info('Sort diffused binarized results by scores')
-        dframe = unsortdf.sort_values(by=column,
-                                          ascending=False)
+        dframe = unsortdf.sort_values(by=sort_column,
+                                      ascending=False)
 
-        return {gene: score for gene, score in dframe.values}
+        result = {nbgwas_rest.RESULTKEY_KEY: column_label_list,
+                  nbgwas_rest.RESULTVALUE_KEY: {}}
+
+        for val in dframe.values:
+            result[nbgwas_rest.RESULTVALUE_KEY][str(val[0])] = val[1:].tolist()
+        return result
 
     def run_tasks(self, keep_looping=lambda: True):
         """
