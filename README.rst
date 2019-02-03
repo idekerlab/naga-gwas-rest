@@ -12,7 +12,7 @@ nbgwas_rest
 
 
 
-REST service for `Network Assisted Genomic Analysis (NAGA) <https://github.com/shfong/nbgwas/>`_
+REST service for `Network Assisted Genomic Analysis (NAGA) <https://github.com/shfong/naga/>`_
 
 `For more information please click here to visit our wiki <https://github.com/idekerlab/nbgwas_rest/wiki>`_
 
@@ -26,9 +26,9 @@ Compatibility
 Dependencies to run
 -------------------
 
- * nbgwas_
- * `networkx 1.11 <https://pypi.org/project/networkx/>`_
+ * `naga-gwas <https://pypi.org/project/naga-gwas/>`_
  * `ndex2 <https://pypi.org/project/ndex2/>`_
+ * `python-daemon <https://pypi.org/project/python-daemon/>`_
  * `flask <https://pypi.org/project/flask/>`_
  * `flask-restplus <https://pypi.org/project/flast-restplus>`_
 
@@ -65,7 +65,7 @@ Running service in development mode
   
   # Service will be running on http://localhost:5000
 
-  # NOTE: To have tasks processed nbgwas_taskrunner.py must be started in
+  # NOTE: To have tasks processed naga_taskrunner.py must be started in
   # another terminal
 
 
@@ -167,5 +167,4 @@ Acknowledgements
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-.. _nbgwas: https://github.com/shfong/nbgwas
 .. _Anaconda: https://www.anaconda.com/

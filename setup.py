@@ -53,7 +53,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    description="REST service for Network Boosted GWAS",
+    description="REST service for Network Assisted Genomic Analysis (NAGA)",
     install_requires=requirements,
     license="BSD license",
     long_description=readme + '\n\n' + history,
