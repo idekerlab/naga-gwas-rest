@@ -61,7 +61,7 @@ setup(
     keywords='nbgwas_rest',
     name='nbgwas_rest',
     packages=find_packages(include=['nbgwas_rest']),
-    scripts=['nbgwas_rest/nbgwas_taskrunner.py'],
+    scripts=['nbgwas_rest/naga_taskrunner.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

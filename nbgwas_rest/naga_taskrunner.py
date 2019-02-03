@@ -674,7 +674,7 @@ class NetworkXFromNDExFactory(object):
         return cxnet.to_networkx()
 
 
-class NbgwasTaskRunner(object):
+class NagaTaskRunner(object):
     """
     Runs tasks created by Nbgwas REST service
     """
@@ -741,7 +741,7 @@ class NbgwasTaskRunner(object):
             return None
 
         logger.info('Generating name map')
-        name_map = {i: j[NbgwasTaskRunner.NDEX_NAME]
+        name_map = {i: j[NagaTaskRunner.NDEX_NAME]
                     for i, j in dG.node.items()}
 
         logger.info('Calling networkx.relabel_nodes with name map')
@@ -806,45 +806,45 @@ class NbgwasTaskRunner(object):
                                               to_Gene=True)
 
         logger.info('Converting to heat using method: ' +
-                     NbgwasTaskRunner.BINARIZE_HEAT_METHOD)
-        g.genes.convert_to_heat(method=NbgwasTaskRunner.BINARIZE_HEAT_METHOD,
-                                name=NbgwasTaskRunner.BINARIZED_HEAT)
+                    NagaTaskRunner.BINARIZE_HEAT_METHOD)
+        g.genes.convert_to_heat(method=NagaTaskRunner.BINARIZE_HEAT_METHOD,
+                                name=NagaTaskRunner.BINARIZED_HEAT)
 
         logger.info('2nd converting to heat using method: ' +
-                     NbgwasTaskRunner.NEG_LOG_HEAT_METHOD)
-        g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
-                                name=NbgwasTaskRunner.NEGATIVE_LOG)
+                    NagaTaskRunner.NEG_LOG_HEAT_METHOD)
+        g.genes.convert_to_heat(method=NagaTaskRunner.NEG_LOG_HEAT_METHOD,
+                                name=NagaTaskRunner.NEGATIVE_LOG)
 
         g.network = task.get_networkx_object()
 
         logger.info('map to node table')
-        g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
-                                     NbgwasTaskRunner.NEGATIVE_LOG])
+        g.map_to_node_table(columns=[NagaTaskRunner.BINARIZED_HEAT,
+                                     NagaTaskRunner.NEGATIVE_LOG])
 
         logger.info('Running diffuse ')
-        g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
+        g.diffuse(method=NagaTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
-                  node_attribute=NbgwasTaskRunner.BINARIZED_HEAT,
-                  result_name=NbgwasTaskRunner.DIFFUSED_BINARIZED)
+                  node_attribute=NagaTaskRunner.BINARIZED_HEAT,
+                  result_name=NagaTaskRunner.DIFFUSED_BINARIZED)
 
         logger.info('Running diffuse 2')
 
-        g.diffuse(method=NbgwasTaskRunner.DIFFUSE_METHOD,
+        g.diffuse(method=NagaTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
-                  node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
-                  result_name=NbgwasTaskRunner.DIFFUSED_LOG)
+                  node_attribute=NagaTaskRunner.NEGATIVE_LOG,
+                  result_name=NagaTaskRunner.DIFFUSED_LOG)
 
         result = self._get_dataframe_of_column(g.network.node_table,
                                                [g.network.node_name,
-                                                NbgwasTaskRunner.BINARIZED_HEAT,
-                                                NbgwasTaskRunner.NEGATIVE_LOG,
-                                                NbgwasTaskRunner.DIFFUSED_BINARIZED,
-                                                NbgwasTaskRunner.DIFFUSED_LOG],
+                                                NagaTaskRunner.BINARIZED_HEAT,
+                                                NagaTaskRunner.NEGATIVE_LOG,
+                                                NagaTaskRunner.DIFFUSED_BINARIZED,
+                                                NagaTaskRunner.DIFFUSED_LOG],
                                                [nbgwas_rest.BINARIZEDHEAT,
                                                 nbgwas_rest.NEG_LOG,
                                                 nbgwas_rest.DIFF_BIN_RESULT,
                                                 nbgwas_rest.FINALHEAT_RESULT],
-                                               NbgwasTaskRunner.DIFFUSED_LOG)
+                                               NagaTaskRunner.DIFFUSED_LOG)
         return result, None
 
     def _get_dataframe_of_column(self, node_table, column_list,
@@ -943,10 +943,10 @@ def run(theargs, keep_looping=lambda: True):
             dfac = DeletedFileBasedTaskFactory(ab_tdir)
 
         netfac = NetworkXFromNDExFactory(ndex_server=theargs.ndexserver)
-        runner = NbgwasTaskRunner(taskfactory=tfac,
-                                  networkfactory=netfac,
-                                  wait_time=theargs.wait_time,
-                                  deletetaskfactory=dfac)
+        runner = NagaTaskRunner(taskfactory=tfac,
+                                networkfactory=netfac,
+                                wait_time=theargs.wait_time,
+                                deletetaskfactory=dfac)
 
         runner.run_tasks(keep_looping=keep_looping)
     except Exception:

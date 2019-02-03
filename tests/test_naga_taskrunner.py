@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `nbgwas_taskrunner` script."""
+"""Tests for `naga_taskrunner` script."""
 
 import os
 import json
@@ -13,16 +13,16 @@ from unittest.mock import MagicMock
 import networkx as nx
 
 import nbgwas_rest
-from nbgwas_rest import nbgwas_taskrunner as nt
-from nbgwas_rest.nbgwas_taskrunner import FileBasedTask
-from nbgwas_rest.nbgwas_taskrunner import FileBasedSubmittedTaskFactory
-from nbgwas_rest.nbgwas_taskrunner import NetworkXFromNDExFactory
-from nbgwas_rest.nbgwas_taskrunner import NbgwasTaskRunner
-from nbgwas_rest.nbgwas_taskrunner import DeletedFileBasedTaskFactory
+from nbgwas_rest import naga_taskrunner as nt
+from nbgwas_rest.naga_taskrunner import FileBasedTask
+from nbgwas_rest.naga_taskrunner import FileBasedSubmittedTaskFactory
+from nbgwas_rest.naga_taskrunner import NetworkXFromNDExFactory
+from nbgwas_rest.naga_taskrunner import NagaTaskRunner
+from nbgwas_rest.naga_taskrunner import DeletedFileBasedTaskFactory
 
 
-class TestNbgwas_rest(unittest.TestCase):
-    """Tests for `nbgwas_rest` package."""
+class TestNaga_rest(unittest.TestCase):
+    """Tests for `naga_rest` package."""
 
     def setUp(self):
         """Set up test fixtures, if any."""
@@ -536,34 +536,34 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
     def test_nbgwastaskrunner_get_networkx_object(self):
 
         # try with None set as task
-        runner = NbgwasTaskRunner()
+        runner = NagaTaskRunner()
         self.assertEqual(runner._get_networkx_object(None), None)
 
         # try with ndex id set to None
         task = FileBasedTask(None, {})
-        runner = NbgwasTaskRunner()
+        runner = NagaTaskRunner()
         self.assertEqual(runner._get_networkx_object(task), None)
 
         # try with ndex id set
         task = FileBasedTask(None, {nbgwas_rest.NDEX_PARAM: 'someid'})
-        runner = NbgwasTaskRunner()
+        runner = NagaTaskRunner()
         self.assertEqual(runner._get_networkx_object(task), None)
 
     def test_nbgwastaskrunner_get_networkx_object_from_ndex_no_network(self):
         mock_network_fac = NetworkXFromNDExFactory()
         mock_network_fac.get_networkx_object = MagicMock(return_value=None)
-        runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+        runner = NagaTaskRunner(networkfactory=mock_network_fac)
         res = runner._get_networkx_object_from_ndex('123')
         self.assertTrue(res is None)
 
     def test_nbgwastaskrunner_get_networkx_object_from_ndex_valid_net(self):
         mock_network_fac = NetworkXFromNDExFactory()
         net_obj = nx.Graph()
-        net_obj.add_node(1, {NbgwasTaskRunner.NDEX_NAME: 'node1'})
-        net_obj.add_node(2, {NbgwasTaskRunner.NDEX_NAME: 'node2'})
+        net_obj.add_node(1, {NagaTaskRunner.NDEX_NAME: 'node1'})
+        net_obj.add_node(2, {NagaTaskRunner.NDEX_NAME: 'node2'})
         net_obj.add_edge(1, 2)
         mock_network_fac.get_networkx_object = MagicMock(return_value=net_obj)
-        runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+        runner = NagaTaskRunner(networkfactory=mock_network_fac)
         res = runner._get_networkx_object_from_ndex('123')
         self.assertTrue(res is not None)
         self.assertEqual(len(res.node), 2)
@@ -575,7 +575,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         try:
             mock_network_fac = NetworkXFromNDExFactory()
             mock_network_fac.get_networkx_object = MagicMock(return_value=None)
-            runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+            runner = NagaTaskRunner(networkfactory=mock_network_fac)
             taskdir = os.path.join(temp_dir, nbgwas_rest.SUBMITTED_STATUS,
                                    '1.2.3.4', 'taskuuid')
             os.makedirs(taskdir, mode=0o755)
@@ -593,12 +593,12 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         try:
             mock_network_fac = NetworkXFromNDExFactory()
             net_obj = nx.Graph()
-            net_obj.add_node(1, {NbgwasTaskRunner.NDEX_NAME: 'node1'})
-            net_obj.add_node(2, {NbgwasTaskRunner.NDEX_NAME: 'node2'})
+            net_obj.add_node(1, {NagaTaskRunner.NDEX_NAME: 'node1'})
+            net_obj.add_node(2, {NagaTaskRunner.NDEX_NAME: 'node2'})
             net_obj.add_edge(1, 2)
             mock_network_fac.\
                 get_networkx_object = MagicMock(return_value=net_obj)
-            runner = NbgwasTaskRunner(networkfactory=mock_network_fac)
+            runner = NagaTaskRunner(networkfactory=mock_network_fac)
             taskdir = os.path.join(temp_dir, nbgwas_rest.SUBMITTED_STATUS,
                                    '1.2.3.4', 'taskuuid')
             os.makedirs(taskdir, mode=0o755)
@@ -637,7 +637,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
     def test_nbgwastaskrunner_run_tasks_no_work(self):
         mocktaskfac = MagicMock()
         mocktaskfac.get_next_task = MagicMock(side_effect=[None, None])
-        runner = NbgwasTaskRunner(wait_time=0, taskfactory=mocktaskfac)
+        runner = NagaTaskRunner(wait_time=0, taskfactory=mocktaskfac)
         loop = MagicMock()
         loop.side_effect = [True, True, False]
         runner.run_tasks(keep_looping=loop)
@@ -657,9 +657,9 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             mock_net_fac. \
                 get_networkx_object = MagicMock(side_effect=Exception('foo'))
 
-            runner = NbgwasTaskRunner(wait_time=0,
-                                      taskfactory=mocktaskfac,
-                                      networkfactory=mock_net_fac)
+            runner = NagaTaskRunner(wait_time=0,
+                                    taskfactory=mocktaskfac,
+                                    networkfactory=mock_net_fac)
             loop = MagicMock()
             loop.side_effect = [True, True, False]
             runner.run_tasks(keep_looping=loop)
@@ -672,14 +672,14 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         temp_dir = tempfile.mkdtemp()
         try:
             # try where delete task factory is none
-            runner = NbgwasTaskRunner(wait_time=0)
+            runner = NagaTaskRunner(wait_time=0)
             self.assertEqual(runner._remove_deleted_task(), False)
 
             # try where no task is returned
             mockfac = MagicMock()
             mockfac.get_next_task = MagicMock(return_value=None)
-            runner = NbgwasTaskRunner(wait_time=0,
-                                      deletetaskfactory=mockfac)
+            runner = NagaTaskRunner(wait_time=0,
+                                    deletetaskfactory=mockfac)
             res = runner._remove_deleted_task()
             self.assertEqual(res, False)
             mockfac.get_next_task.assert_called()
@@ -688,8 +688,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             task = MagicMock()
             task.get_taskdir = MagicMock(return_value=None)
             mockfac.get_next_task = MagicMock(return_value=task)
-            runner = NbgwasTaskRunner(wait_time=0,
-                                      deletetaskfactory=mockfac)
+            runner = NagaTaskRunner(wait_time=0,
+                                    deletetaskfactory=mockfac)
             res = runner._remove_deleted_task()
             self.assertEqual(res, True)
             mockfac.get_next_task.assert_called()
@@ -701,8 +701,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             task.delete_task_files = MagicMock(side_effect=Exception('some '
                                                                      'error'))
             mockfac.get_next_task = MagicMock(return_value=task)
-            runner = NbgwasTaskRunner(wait_time=0,
-                                      deletetaskfactory=mockfac)
+            runner = NagaTaskRunner(wait_time=0,
+                                    deletetaskfactory=mockfac)
             res = runner._remove_deleted_task()
             self.assertEqual(res, False)
             mockfac.get_next_task.assert_called()
@@ -714,8 +714,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             task.get_taskdir = MagicMock(return_value='/foo')
             task.delete_task_files = MagicMock(return_value='a error')
             mockfac.get_next_task = MagicMock(return_value=task)
-            runner = NbgwasTaskRunner(wait_time=0,
-                                      deletetaskfactory=mockfac)
+            runner = NagaTaskRunner(wait_time=0,
+                                    deletetaskfactory=mockfac)
             res = runner._remove_deleted_task()
             self.assertEqual(res, True)
             mockfac.get_next_task.assert_called()
@@ -727,8 +727,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             task.get_taskdir = MagicMock(return_value='/foo')
             task.delete_task_files = MagicMock(return_value=None)
             mockfac.get_next_task = MagicMock(return_value=task)
-            runner = NbgwasTaskRunner(wait_time=0,
-                                      deletetaskfactory=mockfac)
+            runner = NagaTaskRunner(wait_time=0,
+                                    deletetaskfactory=mockfac)
             res = runner._remove_deleted_task()
             self.assertEqual(res, True)
             mockfac.get_next_task.assert_called()
