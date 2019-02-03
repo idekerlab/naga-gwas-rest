@@ -1,0 +1,19 @@
+[Unit]
+Description=Network Assisted Genomic Analysis (NAGA) task runner
+After=auditd.service systemd-user-sessions.service time-sync.target
+
+[Service]
+User=nagarunner
+TimeoutStartSec=0
+Type=simple
+KillMode=process
+export PATH=/opt/miniconda3/bin:$PATH
+WorkingDirectory=/tmp
+ExecStart=/opt/miniconda3/bin/naga_taskrunner.py --wait_time 1 --logconfig /etc/naga-taskrunner.conf /var/www/naga_rest/tasks
+Restart=always
+RestartSec=5
+LimitNOFILE=5555
+
+[Install]
+WantedBy=multi-user.target
+
