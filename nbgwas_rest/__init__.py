@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '0.4.1'
+__version__ = '1.0.0a3'
 
 import os
 import shutil
@@ -63,7 +63,12 @@ ERROR_STATUS = 'error'
 # are stored
 DELETE_REQUESTS = 'delete_requests'
 
+# key in result dictionary denoting the
+# result data
 RESULT_KEY = 'result'
+
+# key in result dictionary denoting input parameters
+PARAMETERS_KEY = 'parameters'
 
 SNP_ANALYZER_NS = 'snp_analyzer'
 
@@ -84,6 +89,7 @@ ns = api.namespace(SNP_ANALYZER_NS,
 
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 
+NAGA_VERSION = 'nagaversion'
 ALPHA_PARAM = 'alpha'
 NETWORK_PARAM = 'network'
 NDEX_PARAM = 'ndex'
@@ -106,6 +112,13 @@ PROTEIN_CODING_PARAM = 'protein_coding'
 
 SNP_ANALYZER_TASK = 'snpanalyzer'
 
+FINALHEAT_RESULT = 'finalheat'
+BINARIZEDHEAT = 'binarizedheat'
+NEG_LOG = 'negativelog'
+DIFF_BIN_RESULT = 'diffusedbinarized'
+
+RESULTKEY_KEY = 'resultkey'
+RESULTVALUE_KEY = 'resultvalue'
 uuid_counter = 1
 
 
@@ -412,6 +425,8 @@ class GetTask(Resource):
         ```Bash
         {
           "status" : "notfound|submitted|processing|error"
+          "parameters" : { "protein_coding": "hg18", "ndex": "f93.." }
+
         }
         ```
 
@@ -425,6 +440,8 @@ class GetTask(Resource):
         {
           "status" : "done",
           "result" : { "GENE1": SCORE, "GENE2", SCORE2 }
+          "parameters" : { "protein_coding": "hg18", "ndex": "f93..",
+                           "nagaversion": "0.4.1", ...}
         }
         ```
         """
@@ -433,7 +450,8 @@ class GetTask(Resource):
                             basedir=get_submit_dir())
 
         if taskpath is not None:
-            resp = jsonify({STATUS_RESULT_KEY: SUBMITTED_STATUS})
+            resp = jsonify({STATUS_RESULT_KEY: SUBMITTED_STATUS,
+                            PARAMETERS_KEY: self._get_task_parameters(taskpath)})
             resp.status_code = 200
             return resp
 
@@ -441,7 +459,8 @@ class GetTask(Resource):
                             basedir=get_processing_dir())
 
         if taskpath is not None:
-            resp = jsonify({STATUS_RESULT_KEY: PROCESSING_STATUS})
+            resp = jsonify({STATUS_RESULT_KEY: PROCESSING_STATUS,
+                            PARAMETERS_KEY: self._get_task_parameters(taskpath)})
             resp.status_code = 200
             return resp
 
@@ -449,13 +468,15 @@ class GetTask(Resource):
                             basedir=get_done_dir())
 
         if taskpath is None:
-            resp = jsonify({STATUS_RESULT_KEY: NOTFOUND_STATUS})
+            resp = jsonify({STATUS_RESULT_KEY: NOTFOUND_STATUS,
+                            PARAMETERS_KEY: None})
             resp.status_code = 410
             return resp
 
         result = os.path.join(taskpath, RESULT)
         if not os.path.isfile(result):
-            resp = jsonify({STATUS_RESULT_KEY: ERROR_STATUS})
+            resp = jsonify({STATUS_RESULT_KEY: ERROR_STATUS,
+                            PARAMETERS_KEY: self._get_task_parameters(taskpath)})
             resp.status_code = 500
             return resp
 
@@ -467,7 +488,30 @@ class GetTask(Resource):
             data = json.load(f)
 
         return jsonify({STATUS_RESULT_KEY: DONE_STATUS,
-                       RESULT_KEY: data})
+                        RESULT_KEY: data,
+                        PARAMETERS_KEY: self._get_task_parameters(taskpath)})
+
+    def _get_task_parameters(self, taskpath):
+        """
+        Gets task parameters from TASK_JSON file as
+        a dictionary
+        :param taskpath:
+        :return: task parameters
+        :rtype dict:
+        """
+        taskparams = None
+        try:
+            taskjsonfile = os.path.join(taskpath, TASK_JSON)
+
+            if os.path.isfile(taskjsonfile):
+                with open(taskjsonfile, 'r') as f:
+                    taskparams = json.load(f)
+                if REMOTEIP_PARAM in taskparams:
+                    # delete the remote ip
+                    del taskparams[REMOTEIP_PARAM]
+        except Exception:
+            app.logger.exception('Caught exception getting parameters')
+        return taskparams
 
     @api.doc('Creates request to delete task',
              responses={

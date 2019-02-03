@@ -12,7 +12,7 @@ import glob
 import daemon
 
 from nbgwas import Nbgwas
-
+from nbgwas import version
 import nbgwas_rest
 import networkx as nx
 from ndex2 import create_nice_cx_from_server
@@ -97,6 +97,22 @@ class FileBasedTask(object):
         self._resultdata = None
         self._protein_coding_dir = protein_coding_dir
         self._protein_coding_suffix = protein_coding_suffix
+
+    def set_naga_version(self, nagaversion=None):
+        """
+        Sets version of Naga used for processing.
+        :param nagaversion: Version of Naga used on processing, if None,
+                        value is parsed from nbgwas.__version__ field
+        :type string:
+        """
+        if self._taskdict is None:
+            self._taskdict = {}
+
+        if nagaversion is None:
+            theversion = version.__version__
+        else:
+            theversion = str(nagaversion)
+        self._taskdict[nbgwas_rest.NAGA_VERSION] = theversion
 
     def delete_task_files(self):
         """
@@ -754,6 +770,7 @@ class NbgwasTaskRunner(object):
 
         logger.info('Task processing completed')
         task.set_result_data(result)
+        task.set_naga_version()
         task.save_task()
         task.move_task(nbgwas_rest.DONE_STATUS,
                        delete_temp_files=delete_temp_files)
@@ -788,12 +805,12 @@ class NbgwasTaskRunner(object):
         g.genes = g.snps.assign_snps_to_genes(window_size=task.get_window(),
                                               to_Gene=True)
 
-        logger.info('Converting to head using method: ' +
+        logger.info('Converting to heat using method: ' +
                      NbgwasTaskRunner.BINARIZE_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.BINARIZE_HEAT_METHOD,
                                 name=NbgwasTaskRunner.BINARIZED_HEAT)
 
-        logger.info('2nd converting to head using method: ' +
+        logger.info('2nd converting to heat using method: ' +
                      NbgwasTaskRunner.NEG_LOG_HEAT_METHOD)
         g.genes.convert_to_heat(method=NbgwasTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
@@ -817,19 +834,39 @@ class NbgwasTaskRunner(object):
                   node_attribute=NbgwasTaskRunner.NEGATIVE_LOG,
                   result_name=NbgwasTaskRunner.DIFFUSED_LOG)
 
-        logger.info('Extract node name and scores from node_table')
-        # the data frame below is the result give the name and
-        # Diffused (Log) to the user
-        unsortdf = g.network.node_table[[g.network.node_name,
-                                         NbgwasTaskRunner.DIFFUSED_LOG]]
+        result = self._get_dataframe_of_column(g.network.node_table,
+                                               [g.network.node_name,
+                                                NbgwasTaskRunner.BINARIZED_HEAT,
+                                                NbgwasTaskRunner.NEGATIVE_LOG,
+                                                NbgwasTaskRunner.DIFFUSED_BINARIZED,
+                                                NbgwasTaskRunner.DIFFUSED_LOG],
+                                               [nbgwas_rest.BINARIZEDHEAT,
+                                                nbgwas_rest.NEG_LOG,
+                                                nbgwas_rest.DIFF_BIN_RESULT,
+                                                nbgwas_rest.FINALHEAT_RESULT],
+                                               NbgwasTaskRunner.DIFFUSED_LOG)
+        return result, None
 
-        logger.info('Sort results by scores')
-        dframe = unsortdf.sort_values(by=NbgwasTaskRunner.DIFFUSED_LOG,
+    def _get_dataframe_of_column(self, node_table, column_list,
+                                 column_label_list, sort_column):
+        """
+
+        :param node_table:
+        :param column:
+        :return:
+        """
+        unsortdf = node_table[column_list]
+
+        logger.info('Sort diffused binarized results by scores')
+        dframe = unsortdf.sort_values(by=sort_column,
                                       ascending=False)
 
-        logger.info('Put results into dict()')
-        result = {gene: score for gene, score in dframe.values}
-        return result, None
+        result = {nbgwas_rest.RESULTKEY_KEY: column_label_list,
+                  nbgwas_rest.RESULTVALUE_KEY: {}}
+
+        for val in dframe.values:
+            result[nbgwas_rest.RESULTVALUE_KEY][str(val[0])] = val[1:].tolist()
+        return result
 
     def run_tasks(self, keep_looping=lambda: True):
         """

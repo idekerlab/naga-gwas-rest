@@ -44,6 +44,8 @@ cmake --build . --target install
 popd
 rm -rf c-blosc-1.15.1
 
+conda install -y scipy
+conda install -y numpy
 conda install -y -c conda-forge python-igraph
 conda install -y -c anaconda flask
 conda install -y -c conda-forge flask-restplus 
@@ -51,20 +53,13 @@ conda install -y -c conda-forge flask-restplus
 # install mod_wsgi for apache
 pip install mod_wsgi
 
-# install ndex2-client
-git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/ndexbio/ndex2-client.git
-pushd ndex2-client
-python setup.py bdist_wheel
-pip install dist/ndex2-*whl
-popd
-rm -rf ndex2-client
+# install biothings_client cause it was not installed automatically by mygene for some reason
+pip install biothings_client
 
-# install nbgwas
-git clone -b 'v0.4.1.chrisdev' --single-branch --depth 1 https://github.com/shfong/nbgwas.git
-pushd nbgwas
-python setup.py build
-python setup.py install
-popd
+# install ndex2-client
+pip install ndex2
+
+pip install naga-gwas==0.4.1
 
 # install nbgwas_rest
 # TODO this should install the version in /vagrant
