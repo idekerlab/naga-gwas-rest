@@ -858,7 +858,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             loop.side_effect = [True, True, False]
             nt.main(['foo.py', '--wait_time', '0',
                      '--protein_coding_dir',
-                     'pcdir', temp_dir],
+                     'pcdir', '--nodaemon', temp_dir],
                     keep_looping=loop)
 
             # test no work and disable delete false
@@ -867,7 +867,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             nt.main(['foo.py', '--wait_time', '0',
                      '--disabledelete',
                      '--protein_coding_dir',
-                     'pcdir', temp_dir],
+                     'pcdir', '--nodaemon', temp_dir],
                     keep_looping=loop)
 
             # test exception catch works
@@ -875,7 +875,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             loop.side_effect = Exception('some error')
             nt.main(['foo.py', '--wait_time', '0',
                      '--protein_coding_dir',
-                     'pcdir', temp_dir],
+                     'pcdir', '--nodaemon', temp_dir],
                     keep_looping=loop)
         finally:
             shutil.rmtree(temp_dir)

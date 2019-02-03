@@ -23,7 +23,8 @@ requirements = [
     'networkx==1.11', #ndex2 requires networks 1.11
     'ndex2',
     'flask',
-    'flask-restplus'
+    'flask-restplus',
+    'python-daemon'
 ]
 
 setup_requirements = [ ]
