@@ -1,5 +1,5 @@
 The instructions in this readme provide steps
-to install nbgwas_taskrunner.py as a service managed by systemd.
+to install naga_taskrunner.py as a service managed by systemd.
 These instructions use the files in this directory and require
 a centos 7 box with superuser access.
 
