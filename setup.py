@@ -23,6 +23,7 @@ requirements = [
     'networkx==1.11', #ndex2 requires networks 1.11
     'ndex2',
     'naga-gwas',
+    'numpy',
     'flask',
     'flask-restplus',
     'python-daemon'
