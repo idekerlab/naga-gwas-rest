@@ -9,7 +9,7 @@ import time
 import shutil
 import json
 import glob
-
+import numpy as np
 from nbgwas import Nbgwas
 
 import nbgwas_rest
@@ -795,6 +795,19 @@ class NbgwasTaskRunner(object):
                                 name=NbgwasTaskRunner.NEGATIVE_LOG)
 
         g.network = task.get_networkx_object()
+
+        neg_log_vals = g.genes.table[NbgwasTaskRunner.NEGATIVE_LOG].values
+
+        neg_log_isfinite_list = np.isfinite(neg_log_vals)
+
+        if (np.any(neg_log_isfinite_list)):
+            maxval = np.max(neg_log_vals[neg_log_isfinite_list])
+            logger.info("Found one or more heat values that are infinite " +
+                        " setting to value: " + str(maxval))
+
+            g.genes.table.loc[~neg_log_isfinite_list, NbgwasTaskRunner.NEGATIVE_LOG] = maxval
+
+            g.network = task.get_networkx_object()
 
         logger.info('map to node table')
         g.map_to_node_table(columns=[NbgwasTaskRunner.BINARIZED_HEAT,
