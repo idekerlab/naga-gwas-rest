@@ -37,14 +37,14 @@ class TestNaga_rest(unittest.TestCase):
 A1CF    10      52271589        52315441
 A2M     12      9111570 9159825
 A2ML1   12      8911704 8930864
-A3GALT2 1       33544953        33559286
+A3GALT2 1       744045        744090
 A4GALT  22      41418839        41419901
 A4GNT   3       139325249       139333919
 AAAS    12      51987506        52001679
 AACS    12      124155649       124193824
 AADAC   3       153014550       153028966
 AADACL2 3       152934404       152958242
-AADACL3 1       12698704        12711313
+AADACL3 1       744045        744095
 AADACL4 1       12627152        12649684
 AADAT   4       171217947       171247947
 AAK1    2       69624874        69724481
@@ -593,8 +593,8 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
         try:
             mock_network_fac = NetworkXFromNDExFactory()
             net_obj = nx.Graph()
-            net_obj.add_node(1, {NagaTaskRunner.NDEX_NAME: 'node1'})
-            net_obj.add_node(2, {NagaTaskRunner.NDEX_NAME: 'node2'})
+            net_obj.add_node(1, {NagaTaskRunner.NDEX_NAME: 'A3GALT2'})
+            net_obj.add_node(2, {NagaTaskRunner.NDEX_NAME: 'AADACL3'})
             net_obj.add_edge(1, 2)
             mock_network_fac.\
                 get_networkx_object = MagicMock(return_value=net_obj)
@@ -625,8 +625,18 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
                 data = json.load(f)
 
             #self.assertEqual(str(data), 'hi')
-            self.assertEqual(data[nbgwas_rest.RESULTVALUE_KEY]['node1'], [0.0, 0.0, 0.0, 0.0])
-            self.assertEqual(data[nbgwas_rest.RESULTVALUE_KEY]['node2'], [0.0, 0.0, 0.0, 0.0])
+            self.assertEqual(data[nbgwas_rest.RESULTVALUE_KEY]['A3GALT2'][0], 0.0)
+            self.assertTrue(0.0 < data[nbgwas_rest.RESULTVALUE_KEY]['A3GALT2'][1] < 0.3)
+            self.assertEqual(data[nbgwas_rest.RESULTVALUE_KEY]['A3GALT2'][2], 0.0)
+            self.assertTrue(0.0 < data[nbgwas_rest.RESULTVALUE_KEY]['A3GALT2'][3] < 0.3)
+
+            self.assertEqual(data[nbgwas_rest.RESULTVALUE_KEY]['AADACL3'][0], 0.0)
+            self.assertTrue(0.0 < data[nbgwas_rest.RESULTVALUE_KEY]['AADACL3'][1] < 0.3)
+            self.assertEqual(data[nbgwas_rest.RESULTVALUE_KEY]['AADACL3'][2], 0.0)
+            self.assertTrue(0.0 < data[nbgwas_rest.RESULTVALUE_KEY]['AADACL3'][3] < 0.3)
+
+
+
             tdict = task.get_taskdict()
             self.assertTrue(nbgwas_rest.NAGA_VERSION in tdict)
             self.assertTrue(tdict[nbgwas_rest.NAGA_VERSION] is not None)
