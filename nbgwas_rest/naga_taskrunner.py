@@ -19,7 +19,7 @@ import networkx as nx
 from ndex2 import create_nice_cx_from_server
 
 
-logger = logging.getLogger('nbgwastaskrunner')
+logger = logging.getLogger('nagataskrunner')
 
 LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
              "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
@@ -51,9 +51,11 @@ def _parse_arguments(desc, args):
                         version=('%(prog)s ' + nbgwas_rest.__version__))
     parser.add_argument('--nodaemon', default=False, action='store_true',
                         help='If set program will NOT run in daemon mode')
-    parser.add_argument('--logconfig', help='Logging configuration file')
+    parser.add_argument('--logconfig', help='Logging configuration file',
+                        default=None)
     parser.add_argument('--verbose', '-v', action='count',
-                        help='Increases logging verbosity, max is 4',
+                        help='Increases logging verbosity for logging ONLY '
+                             'if --logconfig is NOT set, max is 4',
                         default=1)
     return parser.parse_args(args)
 
@@ -943,6 +945,12 @@ def run(theargs, keep_looping=lambda: True):
     :return:
     """
     try:
+        if theargs.logconfig is None:
+            _setuplogging(theargs)
+        else:
+            logging.config.fileConfig(theargs.logconfig, disable_existing_loggers=False)
+            logger.debug('Config file: ' + theargs.logconfig + ' loaded')
+
         ab_tdir = os.path.abspath(theargs.taskdir)
         ab_pdir = os.path.abspath(theargs.protein_coding_dir)
         logger.debug('Task directory set to: ' + ab_tdir)
@@ -968,6 +976,7 @@ def run(theargs, keep_looping=lambda: True):
         return 2
     finally:
         logging.shutdown()
+
 
 def main(args, keep_looping=lambda: True):
     """Main entry point"""
