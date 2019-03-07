@@ -1,20 +1,20 @@
-===========
-nbgwas_rest
-===========
+==============
+naga-gwas-rest
+==============
 
 
-.. image:: https://img.shields.io/pypi/v/nbgwas_rest.svg
-        :target: https://pypi.python.org/pypi/nbgwas_rest
+.. image:: https://img.shields.io/pypi/v/naga-gwas-rest.svg
+        :target: https://pypi.python.org/pypi/naga-gwas-rest
 
-.. image:: https://img.shields.io/travis/idekerlab/nbgwas_rest.svg
-        :target: https://travis-ci.org/idekerlab/nbgwas_rest
+.. image:: https://img.shields.io/travis/idekerlab/naga-gwas-rest.svg
+        :target: https://travis-ci.org/idekerlab/naga-gwas-rest
 
 
 
 
 REST service for `Network Assisted Genomic Analysis (NAGA) <https://github.com/shfong/naga/>`_
 
-`For more information please click here to visit our wiki <https://github.com/idekerlab/nbgwas_rest/wiki>`_
+`For more information please click here to visit our wiki <https://github.com/idekerlab/naga-gwas-rest/wiki>`_
 
 This service is currently running here: http://nbgwas.ucsd.edu
 
@@ -31,6 +31,7 @@ Dependencies to run
  * `python-daemon <https://pypi.org/project/python-daemon/>`_
  * `flask <https://pypi.org/project/flask/>`_
  * `flask-restplus <https://pypi.org/project/flast-restplus>`_
+ * `numpy <https://pypi.org/project/numpy>`_
 
 Additional dependencies to build
 --------------------------------
@@ -47,12 +48,12 @@ It is highly reccommended one use `Anaconda <https://www.anaconda.com/>`_ for Py
 
 .. code:: bash
 
-  git clone https://github.com/idekerlab/nbgwas_rest.git
-  cd nbgwas_rest
+  git clone https://github.com/idekerlab/naga-gwas-rest.git
+  cd naga-gwas-rest
   make install
 
 Running service in development mode
-----------------------------------
+-----------------------------------
 
 
 **NOTE:** Example below runs the REST service and not the task runner.
@@ -69,7 +70,7 @@ Running service in development mode
   # another terminal
 
 
-`Click here for information on launching service via Vagrant VM <https://github.com/idekerlab/nbgwas_rest/wiki/NAGA-REST-under-Vagrant-Virtual-Machine>`_
+`Click here for information on launching service via Vagrant VM <https://github.com/idekerlab/naga-gwas-rest/wiki/NAGA-REST-under-Vagrant-Virtual-Machine>`_
 
 
 Example usage of service
@@ -156,7 +157,7 @@ Example output:
 Bugs
 -----
 
-Please report them `here <https://github.com/idekerlab/nbgwas_rest/issues>`_
+Please report them `here <https://github.com/idekerlab/naga-gwas-rest/issues>`_
 
 Acknowledgements
 ----------------

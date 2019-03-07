@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# nbgwas_rest documentation build configuration file, created by
+# naga-gwas-rest documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'nbgwas_rest'
+project = u'naga-gwas-rest'
 copyright = u"2018, Chris Churas"
 author = u"Chris Churas"
 

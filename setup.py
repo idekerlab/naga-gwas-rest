@@ -21,7 +21,7 @@ with open(os.path.join('nbgwas_rest', '__init__.py')) as ver_file:
 requirements = [
     'argparse',
     'networkx==1.11', #ndex2 requires networks 1.11
-    'ndex2',
+    'ndex2==3.0.0a1',
     'naga-gwas',
     'numpy',
     'flask',
@@ -34,7 +34,7 @@ setup_requirements = [ ]
 test_requirements = [
     'argparse',
     'networkx==1.11', #ndex2 requires networks 1.11
-    'ndex2',
+    'ndex2==3.0.0a1',
     'flask',
     'flask-restplus',
     'unittest2'
@@ -59,14 +59,14 @@ setup(
     license="BSD license",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='nbgwas_rest',
-    name='nbgwas_rest',
+    keywords='naga-gwas-rest',
+    name='naga-gwas-rest',
     packages=find_packages(include=['nbgwas_rest']),
     scripts=['nbgwas_rest/naga_taskrunner.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/idekerlab/nbgwas_rest',
+    url='https://github.com/idekerlab/naga-gwas-rest',
     version=version,
     zip_safe=False,
 )

@@ -8,13 +8,13 @@ Installation
 Stable release
 --------------
 
-To install nbgwas_rest, run this command in your terminal:
+To install naga-gwas-rest, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install nbgwas_rest
+    $ pip install naga-gwas-rest
 
-This is the preferred method to install nbgwas_rest, as it will always install the most recent stable release.
+This is the preferred method to install naga-gwas-rest, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,19 +26,19 @@ you through the process.
 From sources
 ------------
 
-The sources for nbgwas_rest can be downloaded from the `Github repo`_.
+The sources for naga-gwas-rest can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/idekerlab/nbgwas_rest
+    $ git clone git://github.com/idekerlab/naga-gwas-rest
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/idekerlab/nbgwas_rest/tarball/master
+    $ curl  -OL https://github.com/idekerlab/naga-gwas-rest/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/idekerlab/nbgwas_rest
-.. _tarball: https://github.com/idekerlab/nbgwas_rest/tarball/master
+.. _Github repo: https://github.com/idekerlab/naga-gwas-rest
+.. _tarball: https://github.com/idekerlab/naga-gwas-rest/tarball/master

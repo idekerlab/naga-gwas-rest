@@ -37,5 +37,5 @@ systemctl start naga-taskrunner
 ps -elf | grep ddot
 
 # output
-4 S nagarun+ 15010     1  0  80   0 - 207903 poll_s 11:43 ?       00:00:02 /opt/miniconda3/bin/python /opt/miniconda3/bin/naga_taskrunner.py --wait_time 1 --logconfig /etc/naga-taskrunner.conf /var/www/naga_rest/tasks
+4 S nagarun+ 15010     1  0  80   0 - 207903 poll_s 11:43 ?       00:00:02 /opt/miniconda3/bin/python /opt/miniconda3/bin/naga_taskrunner.py --wait_time 1 --logconfig /etc/naga-taskrunner.conf /var/www/nbgwas_rest/tasks
 
