@@ -13,6 +13,7 @@ matrix:
       sudo: true
 
 before_install:
+    - sudo add-apt-repository universe
     - sudo apt-get update
 
 # command to install dependencies
