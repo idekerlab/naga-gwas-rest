@@ -78,10 +78,12 @@ yum install -y nodejs
 git clone -b '0.1.1' --single-branch --depth 1 https://github.com/idekerlab/NBGWAS-Frontend.git
 pushd NBGWAS-Frontend
 npm install .
-cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost:8081\"/" > package.tmp
+cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost:8081\",/" > package.tmp
 mv -f package.tmp package.json
-cat src/data.js | sed "s/endpoint:.*/endpoint: \"http:\/\/localhost:8081\/rest\/v1\/snp_analyzer\",/g" > data.js.tmp
-mv -f data.js.tmp src/data.js
+
+# data.js no longer exists as of 0.1.1 so skipping this
+# cat src/data.js | sed "s/endpoint:.*/endpoint: \"http:\/\/localhost:8081\/rest\/v1\/snp_analyzer\",/g" > data.js.tmp
+#mv -f data.js.tmp src/data.js
 npm run build
 cp -a build/* /var/www/html/.
 popd
