@@ -130,7 +130,7 @@ echo ""
 echo "screen"
 echo "sudo -u apache /bin/bash"
 echo 'export PATH=/opt/miniconda3/bin:$PATH'
-echo "nbgwas_taskrunner.py -vv --nodaemon --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
+echo "naga_taskrunner.py -vv --nodaemon --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
 echo "# Type <Ctrl>-a d to exit screen and screen -r to resume"
 echo ""
 echo ""
