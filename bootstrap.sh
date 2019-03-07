@@ -56,17 +56,12 @@ pip install mod_wsgi
 # install biothings_client cause it was not installed automatically by mygene for some reason
 pip install biothings_client
 
-# install ndex2-client
-pip install ndex2
-
-pip install naga-gwas==0.4.1
-
 # install nbgwas_rest
 # TODO this should install the version in /vagrant
-git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/idekerlab/nbgwas_rest.git
-pushd nbgwas_rest
+git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/idekerlab/naga-gwas-rest.git
+pushd naga-gwas-rest
 make dist
-pip install dist/nbgwas*whl
+pip install dist/naga*whl
 # copy the http configuration file
 cp nbgwas.httpconf /etc/httpd/conf.d/nbgwas.conf
 cp -r nagadata /var/www/html/.
@@ -80,7 +75,7 @@ curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
 yum install -y nodejs
 
 # install NBGWAS-Frontend
-git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/BrettJSettle/NBGWAS-Frontend.git
+git clone -b '0.1.1' --single-branch --depth 1 https://github.com/idekerlab/NBGWAS-Frontend.git
 pushd NBGWAS-Frontend
 npm install .
 cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost:8081\"/" > package.tmp
@@ -133,7 +128,7 @@ echo ""
 echo "screen"
 echo "sudo -u apache /bin/bash"
 echo 'export PATH=/opt/miniconda3/bin:$PATH'
-echo "nbgwas_taskrunner.py -vv --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
+echo "nbgwas_taskrunner.py -vv --nodaemon --wait_time 1 --protein_coding_dir /var/www/nbgwas_rest/tasks/protein_coding_dir /var/www/nbgwas_rest/tasks"
 echo "# Type <Ctrl>-a d to exit screen and screen -r to resume"
 echo ""
 echo ""
