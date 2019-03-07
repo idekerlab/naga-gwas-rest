@@ -501,6 +501,7 @@ rs1806509       1       843817  A       C       0.9152  0.0831  0.286321        
             plist = fac.get_problem_list()
             self.assertEqual(plist[0], taskdir)
 
+            shutil.rmtree(taskdir)
             # try invalid json file
 
             # try with another task this time valid
