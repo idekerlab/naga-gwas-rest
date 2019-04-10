@@ -112,7 +112,7 @@ mkdir -p /var/www/nbgwas_rest/tasks/processing
 mkdir -p /var/www/nbgwas_rest/tasks/done
 mkdir -p /var/www/nbgwas_rest/tasks/delete_requests
 mkdir -p /var/www/nbgwas_rest/tasks/protein_coding_dir
-cp /var/www/html/nagadata/protein_coding/hg*txt /var/www/nbgwas_rest/tasks/protein_coding_dir/.
+cp /var/www/html/nagadata/protein_coding/*txt /var/www/nbgwas_rest/tasks/protein_coding_dir/.
 
 chown -R apache.apache /var/www/nbgwas_rest/tasks
 
