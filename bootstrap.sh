@@ -75,7 +75,7 @@ curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
 yum install -y nodejs
 
 # install NBGWAS-Frontend
-git clone -b '0.1.1' --single-branch --depth 1 https://github.com/idekerlab/NBGWAS-Frontend.git
+git clone -b '0.1.4' --single-branch --depth 1 https://github.com/idekerlab/NBGWAS-Frontend.git
 pushd NBGWAS-Frontend
 npm install .
 cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost:8081\",/" > package.tmp
