@@ -20,10 +20,10 @@ desc = """This system is designed to use biological networks to analyze GWAS res
 
 A GWAS association score is assigned to the genes. A molecular network is downloaded from the NDEx database, and network propagation is performed, providing a set of
  new scores for each gene. The top hits on this list form a new subnetwork, which can be compared to a set of gold standard genes in order to evaluate the
- enrichment for previously discovered biology. 
- 
+ enrichment for previously discovered biology.
+
  **NOTE:** This service is experimental. The interface is subject to change.
- 
+
  See https://github.com/shfong/nbgwas for details and to report issues.
 """ # noqa
 
@@ -305,7 +305,7 @@ def wait_for_task(uuidstr, hintlist=None):
 
 
 post_parser = reqparse.RequestParser()
-post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19'],
+post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19', 'rn6'],
                          default='hg18', required=True,
                          help='Sets which protein coding table to use. '
                               ' Values correspond to [NCBI Human Genome '
