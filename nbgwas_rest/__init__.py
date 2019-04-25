@@ -305,7 +305,7 @@ def wait_for_task(uuidstr, hintlist=None):
 
 
 post_parser = reqparse.RequestParser()
-post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19', 'rn6'],
+post_parser.add_argument(PROTEIN_CODING_PARAM, choices=['hg18', 'hg19', 'rn6', 'mm10'],
                          default='hg18', required=True,
                          help='Sets which protein coding table to use. '
                               ' Values correspond to [NCBI Human Genome '
