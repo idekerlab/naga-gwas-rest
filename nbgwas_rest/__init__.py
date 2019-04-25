@@ -4,7 +4,7 @@
 
 __author__ = """Chris Churas"""
 __email__ = 'churas.camera@gmail.com'
-__version__ = '0.5.0a1'
+__version__ = '0.5.1a1'
 
 import os
 import shutil
