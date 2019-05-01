@@ -809,11 +809,6 @@ class NagaTaskRunner(object):
                                               to_Gene=True)
 
         logger.info('Converting to heat using method: ' +
-                    NagaTaskRunner.BINARIZE_HEAT_METHOD)
-        g.genes.convert_to_heat(method=NagaTaskRunner.BINARIZE_HEAT_METHOD,
-                                name=NagaTaskRunner.BINARIZED_HEAT)
-
-        logger.info('2nd converting to heat using method: ' +
                     NagaTaskRunner.NEG_LOG_HEAT_METHOD)
         g.genes.convert_to_heat(method=NagaTaskRunner.NEG_LOG_HEAT_METHOD,
                                 name=NagaTaskRunner.NEGATIVE_LOG)
@@ -834,16 +829,9 @@ class NagaTaskRunner(object):
             g.network = task.get_networkx_object()
 
         logger.info('map to node table')
-        g.map_to_node_table(columns=[NagaTaskRunner.BINARIZED_HEAT,
-                                     NagaTaskRunner.NEGATIVE_LOG])
+        g.map_to_node_table(columns=[NagaTaskRunner.NEGATIVE_LOG])
 
         logger.info('Running diffuse ')
-        g.diffuse(method=NagaTaskRunner.DIFFUSE_METHOD,
-                  alpha=task.get_alpha(),
-                  node_attribute=NagaTaskRunner.BINARIZED_HEAT,
-                  result_name=NagaTaskRunner.DIFFUSED_BINARIZED)
-
-        logger.info('Running diffuse 2')
 
         g.diffuse(method=NagaTaskRunner.DIFFUSE_METHOD,
                   alpha=task.get_alpha(),
@@ -852,13 +840,9 @@ class NagaTaskRunner(object):
 
         result = self._get_dataframe_of_column(g.network.node_table,
                                                [g.network.node_name,
-                                                NagaTaskRunner.BINARIZED_HEAT,
                                                 NagaTaskRunner.NEGATIVE_LOG,
-                                                NagaTaskRunner.DIFFUSED_BINARIZED,
                                                 NagaTaskRunner.DIFFUSED_LOG],
-                                               [nbgwas_rest.BINARIZEDHEAT,
-                                                nbgwas_rest.NEG_LOG,
-                                                nbgwas_rest.DIFF_BIN_RESULT,
+                                               [nbgwas_rest.NEG_LOG,
                                                 nbgwas_rest.FINALHEAT_RESULT],
                                                NagaTaskRunner.DIFFUSED_LOG)
         return result, None
@@ -873,7 +857,7 @@ class NagaTaskRunner(object):
         """
         unsortdf = node_table[column_list]
 
-        logger.info('Sort diffused binarized results by scores')
+        logger.info('Sort diffused results by scores')
         dframe = unsortdf.sort_values(by=sort_column,
                                       ascending=False)
 
