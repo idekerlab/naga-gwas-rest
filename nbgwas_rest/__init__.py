@@ -179,7 +179,11 @@ def create_task(params):
     params['tasktype'] = SNP_ANALYZER_TASK
     taskpath = os.path.join(get_submit_dir(), str(params['remoteip']),
                             str(params['uuid']))
-    os.makedirs(taskpath, mode=0o775)
+    try:
+        original_umask = os.umask(0)
+        os.makedirs(taskpath, mode=0o775)
+    finally:
+        os.umask(original_umask)
 
     # Getting network
     if SNP_LEVEL_SUMMARY_PARAM not in params or \
