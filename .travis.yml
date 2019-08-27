@@ -19,6 +19,12 @@ before_install:
 # command to install dependencies
 install:
   - sudo apt-get install -y libhdf5-10 libhdf5-dev libbz2-dev libblosc-dev libblosc1
+  - wget https://github.com/unicode-org/icu/archive/release-58-3.tar.gz
+  - tar xvzf release-58-3.tar.gz
+  - cd icu-release-58-3/icu4c/source
+  - ./configure
+  - make
+  - sudo make install
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
