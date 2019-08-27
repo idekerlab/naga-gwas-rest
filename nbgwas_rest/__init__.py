@@ -179,7 +179,7 @@ def create_task(params):
     params['tasktype'] = SNP_ANALYZER_TASK
     taskpath = os.path.join(get_submit_dir(), str(params['remoteip']),
                             str(params['uuid']))
-    os.makedirs(taskpath, mode=0o755)
+    os.makedirs(taskpath, mode=0o775)
 
     # Getting network
     if SNP_LEVEL_SUMMARY_PARAM not in params or \
@@ -192,6 +192,7 @@ def create_task(params):
     with open(networkfile_path, 'wb') as f:
         shutil.copyfileobj(params[SNP_LEVEL_SUMMARY_PARAM].stream, f)
         f.flush()
+    os.chmod(networkfile_path, mode=0o775)
     params[SNP_LEVEL_SUMMARY_PARAM] = SNP_LEVEL_SUMMARY_PARAM
     app.logger.debug(networkfile_path + ' saved and it is ' +
                      str(os.path.getsize(networkfile_path)) + ' bytes')
@@ -210,7 +211,7 @@ def create_task(params):
     with open(taskfilename, 'w') as f:
         json.dump(params, f)
         f.flush()
-
+    os.chmod(taskfilename, mode=0o775)
     shutil.move(taskfilename, os.path.join(taskpath, TASK_JSON))
     return params['uuid']
 
