@@ -1,6 +1,15 @@
 =======
 History
 =======
+0.7.0 (2019-07-01)
+------------------
+
+* Added dm6 in list of valid protein coding region files
+
+0.6.0 (2019-05-06)
+------------------
+
+* Added mm10 and rn6 in list of valid protein coding region files
 
 0.5.0 (2019-03-07)
 ------------------

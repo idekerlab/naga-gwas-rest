@@ -2,8 +2,8 @@
 
 # install base packages
 yum install -y epel-release git gzip tar
-yum install -y wget bzip2 bzip2-utils bzip2-devel gcc gcc-c++ hdf5 hdf5-devel 
-yum install -y httpd httpd-devel 
+yum install -y wget bzip2 bzip2-utils bzip2-devel gcc gcc-c++ hdf5 hdf5-devel
+yum install -y httpd httpd-devel
 yum install -y lzo lzo-devel cmake screen
 yum install -y policycoreutils-python setroubleshoot
 
@@ -48,7 +48,7 @@ conda install -y scipy
 conda install -y numpy
 conda install -y -c conda-forge python-igraph
 conda install -y -c anaconda flask
-conda install -y -c conda-forge flask-restplus 
+conda install -y -c conda-forge flask-restplus
 
 # install mod_wsgi for apache
 pip install mod_wsgi
@@ -58,7 +58,7 @@ pip install biothings_client
 
 # install nbgwas_rest
 # TODO this should install the version in /vagrant
-git clone -b 'chrisdev' --single-branch --depth 1 https://github.com/idekerlab/naga-gwas-rest.git
+git clone -b 'master' --single-branch --depth 1 https://github.com/idekerlab/naga-gwas-rest.git
 pushd naga-gwas-rest
 make dist
 pip install dist/naga*whl
@@ -75,7 +75,8 @@ curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
 yum install -y nodejs
 
 # install NBGWAS-Frontend
-git clone -b '0.1.4' --single-branch --depth 1 https://github.com/idekerlab/NBGWAS-Frontend.git
+git clone -b '0.1.6' --single-branch --depth 1 https://github.com/idekerlab/NBGWAS-Frontend.git
+
 pushd NBGWAS-Frontend
 npm install .
 cat package.json | sed "s/\"homepage\":.*/\"homepage\": \"http:\/\/localhost:8081\",/" > package.tmp
@@ -135,4 +136,3 @@ echo "# Type <Ctrl>-a d to exit screen and screen -r to resume"
 echo ""
 echo ""
 echo "Visit http://localhost:8081/rest/v1 in your browser"
-

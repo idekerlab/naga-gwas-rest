@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import logging
+import logging.config
 import time
 import shutil
 import json
