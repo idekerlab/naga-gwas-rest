@@ -1,6 +1,12 @@
 =======
 History
 =======
+
+0.7.1 (TBD)
+------------------
+
+* Minor changes to enable naga_taskrunner.py to run as a systemd service on centos7 boxes
+
 0.7.0 (2019-07-01)
 ------------------
 
